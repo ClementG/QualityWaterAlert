@@ -73,11 +73,19 @@
 
 ### Epic 1.4: Unit Tests - Core
 
-- [ ] **1.4.1** Write tests for ComplianceChecker
+- [x] **1.4.1** Write tests for ComplianceChecker
   - Description: Test the logic for comparing values against limits
   - Location: `tests/QualityWaterAlert.Core.Tests/Services/ComplianceCheckerTests.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Test Results: **17/17 PASSING** (100%)
+    - Numeric comparisons (<=, <, >=, >, ranges) - all passing
+    - Qualitative measurements - all passing
+    - Edge cases (zero, decimals, missing values) - all passing
+    - Multiple parameters - passing
+    - Sampling event aggregation - passing
+    - Analysis aggregation - passing
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [ ] **1.4.2** Write tests for CommuneSearcher
   - Description: Test the search functionality for communes
@@ -266,9 +274,9 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 7
+**Completed**: 8
 **In Progress**: 0
-**Not Started**: 34
+**Not Started**: 33
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
@@ -282,3 +290,9 @@
 - ✅ 1.2.4 CommuneSearcher service (340+ lines)
 - ✅ Plus supporting models: Commune, WaterNetwork, SamplingEvent (~400 lines)
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
+
+### Phase 1.4.1 Progress: ✅ COMPLETE (ComplianceChecker tests)
+- ✅ Created 17 comprehensive unit tests
+- ✅ **All 17 tests PASSING (100% pass rate)**
+- ✅ Build verified: All projects compile, 0 errors, 0 warnings
+- 🔧 Bug fixed in Phase 1.4: ComplianceChecker range checking logic (locale issue + numeric value precedence)

@@ -58,8 +58,8 @@ public class ComplianceChecker : IComplianceChecker
             return result;
         }
 
-        // Parse the numeric value
-        var numericValue = parameter.ParseNumericValue();
+        // Get numeric value - prefer pre-parsed value if available, otherwise parse it
+        decimal? numericValue = parameter.NumericValue ?? parameter.ParseNumericValue();
         if (numericValue == null)
         {
             result.IsConform = true; // Can't determine, assume conform
@@ -212,11 +212,15 @@ public class ComplianceChecker : IComplianceChecker
         if (limit.Contains(" "))
             limit = limit.Split(' ')[0]; // Take just the first part (the numeric limit)
 
+        // Use InvariantCulture for parsing to handle "." consistently
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+
         // Handle range limits (e.g., "200-1100")
         if (limit.Contains("-") && !limit.StartsWith("-"))
         {
             var parts = limit.Split('-');
-            if (decimal.TryParse(parts[0], out var min) && decimal.TryParse(parts[1], out var max))
+            if (decimal.TryParse(parts[0], System.Globalization.NumberStyles.Any, culture, out var min) && 
+                decimal.TryParse(parts[1], System.Globalization.NumberStyles.Any, culture, out var max))
             {
                 return value >= min && value <= max;
             }
@@ -226,7 +230,7 @@ public class ComplianceChecker : IComplianceChecker
         if (limit.StartsWith("<="))
         {
             var numPart = limit.Substring(2);
-            if (decimal.TryParse(numPart, out var threshold))
+            if (decimal.TryParse(numPart, System.Globalization.NumberStyles.Any, culture, out var threshold))
                 return value <= threshold;
         }
 
@@ -234,7 +238,7 @@ public class ComplianceChecker : IComplianceChecker
         if (limit.StartsWith("<"))
         {
             var numPart = limit.Substring(1);
-            if (decimal.TryParse(numPart, out var threshold))
+            if (decimal.TryParse(numPart, System.Globalization.NumberStyles.Any, culture, out var threshold))
                 return value < threshold;
         }
 
@@ -242,7 +246,7 @@ public class ComplianceChecker : IComplianceChecker
         if (limit.StartsWith(">="))
         {
             var numPart = limit.Substring(2);
-            if (decimal.TryParse(numPart, out var threshold))
+            if (decimal.TryParse(numPart, System.Globalization.NumberStyles.Any, culture, out var threshold))
                 return value >= threshold;
         }
 
@@ -250,12 +254,12 @@ public class ComplianceChecker : IComplianceChecker
         if (limit.StartsWith(">"))
         {
             var numPart = limit.Substring(1);
-            if (decimal.TryParse(numPart, out var threshold))
+            if (decimal.TryParse(numPart, System.Globalization.NumberStyles.Any, culture, out var threshold))
                 return value > threshold;
         }
 
         // Try parsing as plain number (assume must be less than or equal)
-        if (decimal.TryParse(limit, out var plainLimit))
+        if (decimal.TryParse(limit, System.Globalization.NumberStyles.Any, culture, out var plainLimit))
             return value <= plainLimit;
 
         // If we can't parse it, assume conform
