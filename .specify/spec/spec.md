@@ -49,6 +49,7 @@ To provide French citizens with a clear, accessible, and proactive way to monito
 
 ## 5. Out of Scope (for Version 1.0)
 
+- Mobile application (planned for future releases)
 - User accounts and login systems (subscriptions are managed directly via email).
 - Alerts via channels other than email (e.g., SMS, push notifications).
 - Advanced historical data analysis and trend visualization.

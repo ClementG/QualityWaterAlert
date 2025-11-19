@@ -19,11 +19,6 @@
   - Status: Not Started
   - Priority: High
 
-- [ ] **1.1.4** Add NuGet packages for .NET MAUI
-  - Description: Add necessary MAUI packages and UI framework packages
-  - Status: Not Started
-  - Priority: High
-
 ### Epic 1.2: Core Business Logic
 
 - [ ] **1.2.1** Create WaterQualityParameter model
@@ -182,151 +177,100 @@
   - Status: Not Started
   - Priority: High
 
-## Phase 3: .NET MAUI Application
+## Phase 3: Containerization & Deployment
 
-### Epic 3.1: MAUI UI/UX Adaptation
+### Epic 3.1: Docker Configuration
 
-- [ ] **3.1.1** Create MainPage (Shell)
-  - Description: Main navigation shell for the MAUI app
-  - Location: `src/QualityWaterAlert.App/AppShell.xaml`
-  - Status: Not Started
-  - Priority: High
-
-- [ ] **3.1.2** Create CommuneSearchPage
-  - Description: MAUI page for searching communes
-  - Location: `src/QualityWaterAlert.App/Pages/CommuneSearchPage.xaml`
-  - Status: Not Started
-  - Priority: Critical
-
-- [ ] **3.1.3** Create WaterQualityDetailPage
-  - Description: MAUI page to display detailed water quality results
-  - Location: `src/QualityWaterAlert.App/Pages/WaterQualityDetailPage.xaml`
-  - Status: Not Started
-  - Priority: Critical
-
-- [ ] **3.1.4** Create AlertSubscriptionPage
-  - Description: MAUI page for subscribing to email alerts
-  - Location: `src/QualityWaterAlert.App/Pages/AlertSubscriptionPage.xaml`
-  - Status: Not Started
-  - Priority: High
-
-### Epic 3.2: MAUI ViewModels & Logic
-
-- [ ] **3.2.1** Create CommuneSearchViewModel
-  - Description: MVVM ViewModel for search functionality
-  - Location: `src/QualityWaterAlert.App/ViewModels/CommuneSearchViewModel.cs`
-  - Status: Not Started
-  - Priority: High
-
-- [ ] **3.2.2** Create WaterQualityDetailViewModel
-  - Description: MVVM ViewModel for displaying water quality details
-  - Location: `src/QualityWaterAlert.App/ViewModels/WaterQualityDetailViewModel.cs`
-  - Status: Not Started
-  - Priority: High
-
-- [ ] **3.2.3** Create AlertSubscriptionViewModel
-  - Description: MVVM ViewModel for alert subscription logic
-  - Location: `src/QualityWaterAlert.App/ViewModels/AlertSubscriptionViewModel.cs`
-  - Status: Not Started
-  - Priority: High
-
-### Epic 3.3: Platform Testing
-
-- [ ] **3.3.1** Test on Android emulator
-  - Description: Run and test the MAUI app on Android
-  - Status: Not Started
-  - Priority: High
-
-- [ ] **3.3.2** Test on iOS simulator
-  - Description: Run and test the MAUI app on iOS (if available)
-  - Status: Not Started
-  - Priority: Medium
-
-## Phase 4: Containerization & Deployment
-
-### Epic 4.1: Docker Configuration
-
-- [ ] **4.1.1** Create Dockerfile for Blazor WebApp
+- [ ] **3.1.1** Create Dockerfile for Blazor WebApp
   - Description: Multi-stage Dockerfile for building and running the Blazor app
   - Location: `src/QualityWaterAlert.WebApp/Dockerfile`
   - Status: Not Started
   - Priority: Critical
 
-- [ ] **4.1.2** Create docker-compose.yml
+- [ ] **3.1.2** Create docker-compose.yml
   - Description: Define services and volumes for the application
   - Location: `docker-compose.yml`
   - Status: Not Started
   - Priority: Critical
 
-- [ ] **4.1.3** Create .dockerignore
+- [ ] **3.1.3** Create .dockerignore
   - Description: Exclude unnecessary files from Docker build context
   - Location: `.dockerignore`
   - Status: Not Started
   - Priority: Medium
 
-### Epic 4.2: NAS Deployment Guide
+### Epic 3.2: NAS Deployment Guide
 
-- [ ] **4.2.1** Write NAS deployment documentation
+- [ ] **3.2.1** Write NAS deployment documentation
   - Description: Step-by-step guide for deploying to NAS using Docker
   - Location: `docs/DEPLOYMENT.md`
   - Status: Not Started
   - Priority: High
 
-- [ ] **4.2.2** Create environment configuration template
+- [ ] **3.2.2** Create environment configuration template
   - Description: Create .env.example with all necessary environment variables
   - Location: `.env.example`
   - Status: Not Started
   - Priority: Medium
 
-## Phase 5: GitFlow & CI/CD Setup
+## Phase 4: GitFlow & CI/CD Setup
 
-### Epic 5.1: Repository Setup
+### Epic 4.1: Repository Setup
 
-- [ ] **5.1.1** Initialize Git branches
+- [ ] **4.1.1** Initialize Git branches
   - Description: Create main, develop, and initial feature branches
   - Status: Not Started
   - Priority: Medium
 
-- [ ] **5.1.2** Create GitHub Actions workflows
+- [ ] **4.1.2** Create GitHub Actions workflows
   - Description: Set up CI/CD pipeline for automated testing and deployment
   - Location: `.github/workflows/`
   - Status: Not Started
   - Priority: High
 
-- [ ] **5.1.3** Create CONTRIBUTING.md
+- [ ] **4.1.3** Create CONTRIBUTING.md
   - Description: Guidelines for contributing to the project
   - Location: `CONTRIBUTING.md`
   - Status: Not Started
   - Priority: Medium
 
-### Epic 5.2: Documentation
+### Epic 4.2: Documentation
 
-- [ ] **5.2.1** Create comprehensive README.md
+- [ ] **4.2.1** Create comprehensive README.md
   - Description: Project overview, setup instructions, and usage guide
   - Location: `README.md`
   - Status: Not Started
   - Priority: High
 
-- [ ] **5.2.2** Create API documentation
+- [ ] **4.2.2** Create API documentation
   - Description: Document the data.gouv.fr API integration
   - Location: `docs/API.md`
   - Status: Not Started
   - Priority: Medium
 
-- [ ] **5.2.3** Create architecture documentation
+- [ ] **4.2.3** Create architecture documentation
   - Description: Explain the clean architecture and project structure
   - Location: `docs/ARCHITECTURE.md`
   - Status: Not Started
   - Priority: Medium
 
+## Phase 5: Future Enhancements (Post-MVP)
+
+### Epic 5.1: Mobile Application (Optional)
+
+- [ ] **5.1.1** Design and implement .NET MAUI mobile application
+  - Description: Cross-platform mobile app for iOS and Android
+  - Status: Not Started (Future)
+  - Priority: Low
+
 ## Summary
 
-**Total Tasks**: 65
+**Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
 **Completed**: 2
 **In Progress**: 0
-**Not Started**: 63
+**Not Started**: 39
 
-**Critical Priority Tasks**: 16
-**High Priority Tasks**: 22
-**Medium Priority Tasks**: 16
-**Low Priority Tasks**: 11
+**Critical Priority Tasks**: 10
+**High Priority Tasks**: 18
+**Medium Priority Tasks**: 12
+**Low Priority Tasks**: 1

@@ -2,12 +2,11 @@
 
 ## 1. Project Structure & Technology Stack
 
-This project will be developed using a combination of Blazor for the web application and .NET MAUI for the cross-platform mobile application, ensuring a modern and versatile user experience. The entire solution will be containerized with Docker for easy deployment on a NAS or any other container-hosting environment.
+This project will be developed using Blazor for the web application, ensuring a modern and versatile user experience. The entire solution will be containerized with Docker for easy deployment on a NAS or any other container-hosting environment.
 
 ### Technology Choices:
-- **Web Framework**: Blazor Server
-- **Mobile Framework**: .NET MAUI
-- **Backend Language**: C# with .NET
+- **Web Framework**: Blazor (ASP.NET Core)
+- **Language**: C# with .NET
 - **Unit Testing**: NUnit
 - **Containerization**: Docker
 - **Version Control**: Git, following the GitFlow pattern
@@ -18,8 +17,7 @@ The solution will be organized into the following projects to maintain a clean a
 ```
 /QualityWaterAlert
 |-- /src
-|   |-- QualityWaterAlert.WebApp/           # Blazor Server project
-|   |-- QualityWaterAlert.App/              # .NET MAUI project
+|   |-- QualityWaterAlert.WebApp/           # Blazor Web Application
 |   |-- QualityWaterAlert.Core/             # Shared business logic, models, and services
 |   |-- QualityWaterAlert.Infrastructure/   # Data access, API clients, etc.
 |-- /tests
@@ -45,15 +43,15 @@ The solution will be organized into the following projects to maintain a clean a
 - **Milestone 2.3: Email Service Integration**: Integrate an email service to handle the sending of alerts.
 - **Milestone 2.4: End-to-End Testing**: Manually test the complete user flow from searching to subscribing for alerts.
 
-### Phase 3: .NET MAUI Application
-- **Milestone 3.1: UI/UX Adaptation**: Adapt the UI/UX design for mobile devices, ensuring a native look and feel.
-- **Milestone 3.2: View Development**: Develop the necessary views in .NET MAUI to replicate the functionality of the Blazor app.
-- **Milestone 3.3: Platform Testing**: Test the application on both Android and iOS (simulators or physical devices).
-
 ### Phase 4: Containerization & Deployment
 - **Milestone 4.1: Dockerfile Creation**: Write a `Dockerfile` for the Blazor application.
 - **Milestone 4.2: Docker Compose**: Create a `docker-compose.yml` file to manage the application container.
 - **Milestone 4.3: NAS Deployment**: Write clear instructions on how to deploy the application to a NAS using Docker.
+
+### Phase 5: Future Enhancements (Post-MVP)
+- Consider developing a .NET MAUI mobile application to complement the web application
+- Add advanced analytics and historical trend analysis
+- Implement user accounts and personalization features
 
 ## 3. GitFlow Workflow
 
