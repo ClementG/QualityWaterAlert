@@ -48,6 +48,9 @@ TestResults/
 # Entity Framework
 *.edmx.diagram
 
+# Data files (keep locally, don't commit)
+datas/
+*.txt
 # Environment variables
 .env
 .env.local

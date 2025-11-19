@@ -21,28 +21,28 @@
 
 ### Epic 1.2: Core Business Logic
 
-- [ ] **1.2.1** Create WaterQualityParameter model
+- [x] **1.2.1** Create WaterQualityParameter model
   - Description: Define the data model for water quality parameters (name, measured value, limit, unit, date)
   - Location: `src/QualityWaterAlert.Core/Models/WaterQualityParameter.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
 
-- [ ] **1.2.2** Create WaterQualityAnalysis model
+- [x] **1.2.2** Create WaterQualityAnalysis model
   - Description: Define the model for a complete water quality analysis result (commune, parameters, date)
   - Location: `src/QualityWaterAlert.Core/Models/WaterQualityAnalysis.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
 
-- [ ] **1.2.3** Create ComplianceChecker service
+- [x] **1.2.3** Create ComplianceChecker service
   - Description: Implement logic to compare measured values against regulatory limits
   - Location: `src/QualityWaterAlert.Core/Services/ComplianceChecker.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
 
-- [ ] **1.2.4** Create CommuneSearcher service
+- [x] **1.2.4** Create CommuneSearcher service
   - Description: Implement logic to search for communes by name or postal code
   - Location: `src/QualityWaterAlert.Core/Services/CommuneSearcher.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
 
 ### Epic 1.3: Data Access & API Integration
@@ -266,11 +266,19 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 3
+**Completed**: 7
 **In Progress**: 0
-**Not Started**: 38
+**Not Started**: 34
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
 **Medium Priority Tasks**: 12
 **Low Priority Tasks**: 1
+
+### Phase 1.2 Progress: ✅ COMPLETE (All 4 tasks done)
+- ✅ 1.2.1 WaterQualityParameter model (287 lines)
+- ✅ 1.2.2 WaterQualityAnalysis model (220 lines)
+- ✅ 1.2.3 ComplianceChecker service (380+ lines)
+- ✅ 1.2.4 CommuneSearcher service (340+ lines)
+- ✅ Plus supporting models: Commune, WaterNetwork, SamplingEvent (~400 lines)
+- ✅ Build verified: All projects compile, 0 errors, 0 warnings
