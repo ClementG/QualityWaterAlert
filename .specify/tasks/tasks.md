@@ -90,8 +90,31 @@
 - [ ] **1.4.2** Write tests for CommuneSearcher
   - Description: Test the search functionality for communes
   - Location: `tests/QualityWaterAlert.Core.Tests/Services/CommuneSearcherTests.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Test Results: **42/42 PASSING** (100%)
+    - Search by name (partial matching) - all passing
+    - Search by INSEE code (exact match) - all passing
+    - Search by postal code - all passing
+    - Search by department - all passing
+    - Pagination (GetAllCommunes) - all passing
+    - Advanced search with criteria - all passing
+    - Sorting (NameAscending, ConformityFirst, NetworkCount, etc.) - all passing
+    - Related communes lookup - all passing
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
+
+- [x] **1.4.3** Write tests for data models
+  - Description: Test all 5 data models (WaterQualityParameter, Commune, WaterNetwork, SamplingEvent, WaterQualityAnalysis)
+  - Location: `tests/QualityWaterAlert.Core.Tests/Models/DataModelTests.cs`
+  - Status: Completed
+  - Priority: High
+  - Test Results: **48/48 PASSING** (100%)
+    - WaterQualityParameter properties and methods - all passing
+    - Commune conformity calculations - all passing
+    - WaterNetwork conformity tracking - all passing
+    - SamplingEvent aggregation - all passing
+    - WaterQualityAnalysis aggregation and trending - all passing
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ### Epic 1.5: Unit Tests - Infrastructure
 
@@ -274,9 +297,9 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 8
+**Completed**: 10
 **In Progress**: 0
-**Not Started**: 33
+**Not Started**: 31
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
@@ -291,8 +314,9 @@
 - ✅ Plus supporting models: Commune, WaterNetwork, SamplingEvent (~400 lines)
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
-### Phase 1.4.1 Progress: ✅ COMPLETE (ComplianceChecker tests)
-- ✅ Created 17 comprehensive unit tests
-- ✅ **All 17 tests PASSING (100% pass rate)**
+### Phase 1.4 Progress: ✅ COMPLETE (All 3 tasks done)
+- ✅ 1.4.1 ComplianceChecker tests (17/17 PASSING)
+- ✅ 1.4.2 CommuneSearcher tests (42/42 PASSING)  
+- ✅ 1.4.3 Data model tests (48/48 PASSING)
+- ✅ **Total Phase 1.4: 107/107 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
-- 🔧 Bug fixed in Phase 1.4: ComplianceChecker range checking logic (locale issue + numeric value precedence)
