@@ -142,10 +142,10 @@
 
 ### Epic 2.1: UI/UX Design & Components
 
-- [ ] **2.1.1** Design main layout and navigation
+- [x] **2.1.1** Design main layout and navigation
   - Description: Create the overall page layout with navigation menu, header, and footer
   - Location: `src/QualityWaterAlert.WebApp/Shared/`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
 
 - [ ] **2.1.2** Create CommuneSearch component
