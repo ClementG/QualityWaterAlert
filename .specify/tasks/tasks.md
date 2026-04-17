@@ -76,14 +76,6 @@
   - Location: `src/QualityWaterAlert.Infrastructure/Services/EmailService.cs`
   - Status: Completed
   - Priority: High
-  - Implementation: Full SMTP email service (97 lines)
-    - Configurable SMTP server, port, and credentials
-    - SSL/TLS support with optional authentication
-    - HTML email support (IsBodyHtml = true)
-    - Comprehensive input validation
-    - Robust error handling with detailed exception messages
-    - Async/await pattern for non-blocking operations
-  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ### Epic 1.4: Unit Tests - Core
 
@@ -132,16 +124,18 @@
 
 ### Epic 1.5: Unit Tests - Infrastructure
 
-- [ ] **1.5.1** Write tests for DataGouvFrProvider
+- [x] **1.5.1** Write tests for DataGouvFrProvider
   - Description: Mock API calls and test data parsing
   - Location: `tests/QualityWaterAlert.Infrastructure.Tests/Providers/DataGouvFrProviderTests.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Test Results: Mocked API calls using HttpMessageHandler, tested data parsing and caching
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **1.5.2** Write tests for EmailService
+- [x] **1.5.2** Write tests for EmailService
   - Description: Mock email sending and test notification content
   - Location: `tests/QualityWaterAlert.Infrastructure.Tests/Services/EmailServiceTests.cs`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
 
 ## Phase 2: Blazor Web Application
@@ -328,7 +322,7 @@
 - ✅ Plus supporting models: Commune, WaterNetwork, SamplingEvent (~400 lines)
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
-### Phase 1.3 Progress: ✅ COMPLETE (4/4 tasks done - 100%)
+### Phase 1.3 Progress: ✅ COMPLETE (All 4 tasks done)
 - ✅ 1.3.1 IDataProvider interface (Completed)
 - ✅ 1.3.2 DataGouvFrProvider implementation (420+ lines)
   - Full async API client for data.gouv.fr
@@ -337,11 +331,7 @@
   - Robust error handling and data parsing
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 - ✅ 1.3.3 IEmailService interface (Completed)
-- ✅ 1.3.4 EmailService implementation (97 lines)
-  - Configurable SMTP server with authentication
-  - SSL/TLS support and HTML email capability
-  - Comprehensive error handling and validation
-  - Build Status: ✅ Clean (0 errors, 0 warnings)
+- ✅ 1.3.4 EmailService implementation (Completed)
 
 ### Phase 1.4 Progress: ✅ COMPLETE (All 3 tasks done)
 - ✅ 1.4.1 ComplianceChecker tests (17/17 PASSING)
@@ -349,3 +339,7 @@
 - ✅ 1.4.3 Data model tests (48/48 PASSING)
 - ✅ **Total Phase 1.4: 107/107 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
+
+### Phase 1.5 Progress: ✅ COMPLETE (All 2 tasks done)
+- ✅ 1.5.1 DataGouvFrProvider tests
+- ✅ 1.5.2 EmailService tests

@@ -124,7 +124,8 @@ namespace QualityWaterAlert.Infrastructure.Providers
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    var jsonDoc = await response.Content.ReadAsAsync<JsonDocument>();
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    var jsonDoc = await JsonDocument.ParseAsync(stream);
                     var communes_list = ParseCommunesFromDataset(jsonDoc);
                     return communes_list;
                 }
