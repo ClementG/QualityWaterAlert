@@ -129,7 +129,13 @@
   - Location: `tests/QualityWaterAlert.Infrastructure.Tests/Providers/DataGouvFrProviderTests.cs`
   - Status: Completed
   - Priority: Critical
-  - Test Results: Mocked API calls using HttpMessageHandler, tested data parsing and caching
+  - Test Results: **10/10 PASSING** (100%)
+    - Constructor validation (null HttpClient) — passing
+    - ArgumentException for invalid INSEE codes (null, empty, whitespace) — passing
+    - InvalidOperationException when commune not found — passing
+    - Graceful fallback to empty list on API failure — passing
+    - Cache hit: second call reuses result without extra HTTP request — passing
+    - Return type validation — passing
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [x] **1.5.2** Write tests for EmailService
@@ -137,6 +143,10 @@
   - Location: `tests/QualityWaterAlert.Infrastructure.Tests/Services/EmailServiceTests.cs`
   - Status: Completed
   - Priority: High
+  - Test Results: **12/12 PASSING** (100%)
+    - Constructor null-argument validation (smtpServer, fromEmail, senderName) — passing
+    - SendEmailAsync validation: invalid To/Subject/Body (null, empty, whitespace) — passing
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ## Phase 2: Blazor Web Application
 
@@ -144,15 +154,25 @@
 
 - [x] **2.1.1** Design main layout and navigation
   - Description: Create the overall page layout with navigation menu, header, and footer
-  - Location: `src/QualityWaterAlert.WebApp/Shared/`
+  - Location: `src/QualityWaterAlert.WebApp/Components/Layout/` (MainLayout.razor, NavMenu.razor)
   - Status: Completed
   - Priority: High
 
-- [ ] **2.1.2** Create CommuneSearch component
+- [x] **2.1.2** Create CommuneSearch component
   - Description: Blazor component for searching communes by name or postal code
   - Location: `src/QualityWaterAlert.WebApp/Components/CommuneSearch.razor`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Text input with search icon; placeholder switches to "Chargement…" during init
+    - Auto-detects postal code (digits) vs commune name and routes to `SearchByPostalCode` / `SearchByName`
+    - Dropdown with up to 15 results (configurable via `MaxResults` parameter)
+    - `OnCommuneSelected` EventCallback emits the chosen `Commune` to parent
+    - Escape key closes dropdown; min query length configurable via `MinQueryLength` (default 2)
+    - `IDataProvider` registered in DI (`Program.cs`) with typed `HttpClient`
+    - Core usings added to `_Imports.razor` (Core.Models, Core.Services, Infrastructure.Interfaces)
+    - Component styles added to `wwwroot/app.css`
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [ ] **2.1.3** Create WaterQualityDisplay component
   - Description: Blazor component to display water quality data with tables and charts
@@ -305,9 +325,9 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 13
+**Completed**: 14
 **In Progress**: 0
-**Not Started**: 28
+**Not Started**: 27
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
@@ -337,9 +357,21 @@
 - ✅ 1.4.1 ComplianceChecker tests (17/17 PASSING)
 - ✅ 1.4.2 CommuneSearcher tests (42/42 PASSING)  
 - ✅ 1.4.3 Data model tests (48/48 PASSING)
-- ✅ **Total Phase 1.4: 107/107 tests PASSING (100% pass rate)**
+- ✅ **Total Phase 1.4: 108/108 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
+### Phase 2.1 Progress: 🔄 IN PROGRESS (1/6 tasks done)
+- ✅ 2.1.1 Main layout and navigation (MainLayout.razor, NavMenu.razor)
+- ✅ 2.1.2 CommuneSearch component — search by name or postal code, EventCallback, Bootstrap dropdown
+- ⬜ 2.1.3 WaterQualityDisplay component
+- ⬜ 2.1.4 ComplianceIndicator component
+- ⬜ 2.1.5 AlertSubscription component
+- ⬜ 2.1.6 AlertConfirmation component
+
 ### Phase 1.5 Progress: ✅ COMPLETE (All 2 tasks done)
-- ✅ 1.5.1 DataGouvFrProvider tests
-- ✅ 1.5.2 EmailService tests
+- ✅ 1.5.1 DataGouvFrProvider tests (10/10 PASSING)
+  - Constructor validation, INSEE code validation, not-found error, API failure fallback, cache hit
+- ✅ 1.5.2 EmailService tests (12/12 PASSING)
+  - Constructor validation, SendEmailAsync argument validation
+- ✅ **Total Phase 1.5: 22/22 tests PASSING (100% pass rate)**
+- ✅ Build verified: All projects compile, 0 errors, 0 warnings

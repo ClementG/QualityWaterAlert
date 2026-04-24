@@ -1,3 +1,5 @@
+using QualityWaterAlert.Infrastructure.Interfaces;
+using QualityWaterAlert.Infrastructure.Providers;
 using QualityWaterAlert.WebApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient<IDataProvider, DataGouvFrProvider>(client =>
+{
+    client.BaseAddress = new Uri("https://www.data.gouv.fr/");
+    client.DefaultRequestHeaders.Add("User-Agent", "QualityWaterAlert/1.0");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 
