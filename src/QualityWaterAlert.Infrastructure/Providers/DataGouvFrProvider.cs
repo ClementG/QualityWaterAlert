@@ -3,26 +3,31 @@ using QualityWaterAlert.Infrastructure.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace QualityWaterAlert.Infrastructure.Providers
 {
     /// <summary>
-    /// Implementation of IDataProvider that fetches water quality data from data.gouv.fr API.
-    /// Provides access to French water quality control results and commune information.
+    /// Fetches water quality data from data.gouv.fr.
+    ///
+    /// Flow for GetAllCommunesAsync():
+    ///   1. GET /api/1/datasets/{id}/ → discover the download URL for DIS_COM_UDI_*.txt
+    ///   2. Stream-download the CSV file from that URL
+    ///   3. Parse into Commune / WaterNetwork objects
+    ///   4. Cache the result for CacheExpirationMinutes
     /// </summary>
     public class DataGouvFrProvider : IDataProvider
     {
         private readonly HttpClient _httpClient;
-        private const string DataGouvBaseUrl = "https://data.gouv.fr/api/v2/datasets";
-        private const string DatasetId = "5e165a9a3b0a6d5cb1ae1797"; // French water quality dataset ID
-        private const string ResourceBaseUrl = "https://www.data.gouv.fr/fr/datasets/";
 
-        // Cache for communes to avoid repeated API calls
+        // Dataset: "Résultats du contrôle sanitaire de l'eau du robinet" on data.gouv.fr
+        private const string DatasetApiPath = "/api/1/datasets/5e165a9a3b0a6d5cb1ae1797/";
+
         private List<Commune>? _communesCache;
         private DateTime _communesCacheTime = DateTime.MinValue;
         private const int CacheExpirationMinutes = 60;
@@ -32,295 +37,170 @@ namespace QualityWaterAlert.Infrastructure.Providers
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
-        /// <summary>
-        /// Asynchronously retrieves a comprehensive water quality analysis for a specific commune.
-        /// </summary>
-        public async Task<WaterQualityAnalysis> GetWaterQualityAnalysisAsync(string inseeCode, DateTime? startDate, DateTime? endDate)
+        // -------------------------------------------------------------------------
+        // IDataProvider
+        // -------------------------------------------------------------------------
+
+        public async Task<WaterQualityAnalysis> GetWaterQualityAnalysisAsync(
+            string inseeCode, DateTime? startDate, DateTime? endDate)
         {
             if (string.IsNullOrWhiteSpace(inseeCode))
                 throw new ArgumentException("INSEE code cannot be null or empty", nameof(inseeCode));
 
-            try
+            var communes = await GetAllCommunesAsync();
+            var commune = communes.FirstOrDefault(c => c.INSEECode == inseeCode)
+                ?? throw new InvalidOperationException($"Commune with INSEE code {inseeCode} not found");
+
+            var analysis = new WaterQualityAnalysis
             {
-                // Fetch all communes and find the matching one
-                var communes = await GetAllCommunesAsync();
-                var commune = communes.FirstOrDefault(c => c.INSEECode == inseeCode);
+                Commune = commune,
+                AnalysisPeriodStart = startDate,
+                AnalysisPeriodEnd = endDate ?? DateTime.Now,
+                GeneratedDate = DateTime.Now
+            };
 
-                if (commune == null)
-                    throw new InvalidOperationException($"Commune with INSEE code {inseeCode} not found");
-
-                // Create the analysis object
-                var analysis = new WaterQualityAnalysis
-                {
-                    Commune = commune,
-                    AnalysisPeriodStart = startDate,
-                    AnalysisPeriodEnd = endDate ?? DateTime.Now,
-                    GeneratedDate = DateTime.Now
-                };
-
-                // Fetch sampling events and measurements for this commune
-                await PopulateSamplingEventsAndMeasurements(analysis);
-
-                // Calculate overall conformity
-                analysis.OverallConformity = analysis.SamplingEvents.Count == 0 ? 'U' : 
-                    (analysis.SamplingEvents.All(se => se.BacterioConformity == 'C' && se.ChemicalConformity == 'C') ? 'C' : 'N');
-
-                return analysis;
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new InvalidOperationException($"Failed to fetch water quality data for commune {inseeCode}", ex);
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException("Failed to parse water quality API response", ex);
-            }
+            // TODO: implement DIS_PLV + DIS_RESULT streaming (same pattern as communes)
+            analysis.UpdateOverallConformity();
+            return analysis;
         }
 
-        /// <summary>
-        /// Asynchronously retrieves all available communes from the data source.
-        /// Uses caching to avoid repeated API calls within the cache expiration period.
-        /// </summary>
         public async Task<List<Commune>> GetAllCommunesAsync()
         {
-            // Return cached result if still valid
-            if (_communesCache != null && DateTime.Now.Subtract(_communesCacheTime).TotalMinutes < CacheExpirationMinutes)
-            {
+            if (_communesCache is not null &&
+                DateTime.Now.Subtract(_communesCacheTime).TotalMinutes < CacheExpirationMinutes)
                 return _communesCache;
-            }
 
-            try
-            {
-                _communesCache = await FetchCommunesFromDataGouvAsync();
-                _communesCacheTime = DateTime.Now;
-                return _communesCache ?? new List<Commune>();
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new InvalidOperationException("Failed to fetch communes from data.gouv.fr", ex);
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException("Failed to parse communes API response", ex);
-            }
+            var fileUrl = await FindResourceUrlAsync("COM_UDI")
+                ?? throw new InvalidOperationException(
+                    "DIS_COM_UDI file not found in dataset resources on data.gouv.fr");
+
+            _communesCache = await DownloadAndParseCommuneFileAsync(fileUrl);
+            _communesCacheTime = DateTime.Now;
+            return _communesCache;
         }
 
+        // -------------------------------------------------------------------------
+        // API discovery
+        // -------------------------------------------------------------------------
+
         /// <summary>
-        /// Fetches commune data from data.gouv.fr API.
+        /// Calls the data.gouv.fr dataset API and returns the download URL of the first
+        /// resource whose title contains <paramref name="fileNameFragment"/>.
+        /// Returns null if the API call fails or no matching resource is found.
         /// </summary>
-        private async Task<List<Commune>> FetchCommunesFromDataGouvAsync()
+        private async Task<string?> FindResourceUrlAsync(string fileNameFragment)
         {
-            var communes = new Dictionary<string, Commune>();
-
-            // Attempt to fetch from data.gouv.fr API
-            // This is a simplified version that creates communes from known data
-            // In production, this would parse the actual API response
-
             try
             {
-                // Try to get the dataset information
-                var url = $"{DataGouvBaseUrl}/{DatasetId}";
-                var response = await _httpClient.GetAsync(url);
-                
-                if (response.IsSuccessStatusCode)
+                using var response = await _httpClient.GetAsync(DatasetApiPath);
+                if (!response.IsSuccessStatusCode) return null;
+
+                using var stream = await response.Content.ReadAsStreamAsync();
+                using var doc = await JsonDocument.ParseAsync(stream);
+
+                if (!doc.RootElement.TryGetProperty("resources", out var resources))
+                    return null;
+
+                foreach (var resource in resources.EnumerateArray())
                 {
-                    using var stream = await response.Content.ReadAsStreamAsync();
-                    var jsonDoc = await JsonDocument.ParseAsync(stream);
-                    var communes_list = ParseCommunesFromDataset(jsonDoc);
-                    return communes_list;
+                    var title = resource.TryGetProperty("title", out var t) ? t.GetString() : null;
+                    var url   = resource.TryGetProperty("url",   out var u) ? u.GetString() : null;
+
+                    if (title is not null && url is not null &&
+                        title.Contains(fileNameFragment, StringComparison.OrdinalIgnoreCase))
+                        return url;
                 }
             }
-            catch
+            catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
-                // If API call fails, return empty list or use fallback data
+                // Let the caller decide how to handle — return null so it throws a clear message
             }
 
-            // Fallback: return empty list (would be populated by actual API in production)
-            return new List<Commune>();
+            return null;
+        }
+
+        // -------------------------------------------------------------------------
+        // CSV download & parsing
+        // -------------------------------------------------------------------------
+
+        /// <summary>
+        /// Streams the CSV file at <paramref name="fileUrl"/> and parses it into communes.
+        /// </summary>
+        private async Task<List<Commune>> DownloadAndParseCommuneFileAsync(string fileUrl)
+        {
+            using var response = await _httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+
+            return await ParseCommunesFromReaderAsync(reader);
         }
 
         /// <summary>
-        /// Populates sampling events and measurements for a water quality analysis.
+        /// Parses the DIS_COM_UDI CSV format — one row per network, grouped by INSEE code.
+        /// Columns: inseecommune, nomcommune, quartier, cdreseau, nomreseau, debutalim (all quoted)
         /// </summary>
-        private async Task PopulateSamplingEventsAndMeasurements(WaterQualityAnalysis analysis)
+        private static async Task<List<Commune>> ParseCommunesFromReaderAsync(TextReader reader)
         {
-            // Fetch sampling events (prélèvements) for this commune
-            var samplingEvents = await FetchSamplingEventsForCommuneAsync(analysis.Commune.INSEECode, 
-                analysis.AnalysisPeriodStart, 
-                analysis.AnalysisPeriodEnd);
+            var communeDict = new Dictionary<string, Commune>(StringComparer.Ordinal);
 
-            analysis.SamplingEvents = samplingEvents;
+            await reader.ReadLineAsync(); // skip header
 
-            // Fetch measurements (résultats) for all sampling events
-            var allMeasurements = new List<WaterQualityParameter>();
-            foreach (var samplingEvent in samplingEvents)
+            string? line;
+            while ((line = await reader.ReadLineAsync()) is not null)
             {
-                var measurements = await FetchMeasurementsForSamplingEventAsync(samplingEvent.ReferenceId);
-                allMeasurements.AddRange(measurements);
-            }
+                if (string.IsNullOrWhiteSpace(line)) continue;
 
-            analysis.AllMeasurements = allMeasurements;
-        }
+                var parts = SplitQuotedCsvLine(line);
+                if (parts.Length < 6) continue;
 
-        /// <summary>
-        /// Fetches sampling events for a specific commune within a date range.
-        /// </summary>
-        private async Task<List<SamplingEvent>> FetchSamplingEventsForCommuneAsync(string inseeCode, DateTime? startDate, DateTime? endDate)
-        {
-            var samplingEvents = new List<SamplingEvent>();
+                var inseeCode   = parts[0];
+                var communeName = parts[1];
+                var quartier    = parts[2];
+                var networkCode = parts[3];
+                var networkName = parts[4];
+                var supplyStart = parts[5];
 
-            try
-            {
-                // In a real implementation, this would query the data.gouv.fr API
-                // or a local database with the water quality data
-                // For now, return empty list as data would need to be loaded separately
-                
-                // Example of how the API call might look:
-                // var query = BuildSamplingEventQuery(inseeCode, startDate, endDate);
-                // var response = await _httpClient.GetAsync(query);
-                // samplingEvents = ParseSamplingEventsFromResponse(response);
+                // Department = first 3 chars for DOM-TOM (97x), else first 2
+                var deptCode = inseeCode.StartsWith("97", StringComparison.Ordinal) && inseeCode.Length >= 3
+                    ? inseeCode[..3]
+                    : inseeCode.Length >= 2 ? inseeCode[..2] : inseeCode;
 
-                return samplingEvents;
-            }
-            catch
-            {
-                return new List<SamplingEvent>();
-            }
-        }
-
-        /// <summary>
-        /// Fetches measurements (results) for a specific sampling event.
-        /// </summary>
-        private async Task<List<WaterQualityParameter>> FetchMeasurementsForSamplingEventAsync(string referenceId)
-        {
-            var measurements = new List<WaterQualityParameter>();
-
-            try
-            {
-                // In a real implementation, this would query the data.gouv.fr API
-                // or a local database with the measurement results
-                
-                return measurements;
-            }
-            catch
-            {
-                return new List<WaterQualityParameter>();
-            }
-        }
-
-        /// <summary>
-        /// Parses communes from the dataset JSON response.
-        /// </summary>
-        private List<Commune> ParseCommunesFromDataset(JsonDocument doc)
-        {
-            var communes = new List<Commune>();
-
-            try
-            {
-                var root = doc.RootElement;
-                
-                // Check if the response contains resources array
-                if (root.TryGetProperty("resources", out var resourcesElement) && 
-                    resourcesElement.ValueKind == JsonValueKind.Array)
+                if (!communeDict.TryGetValue(inseeCode, out var commune))
                 {
-                    foreach (var resource in resourcesElement.EnumerateArray())
+                    commune = new Commune
                     {
-                        // Look for commune reference files
-                        if (resource.TryGetProperty("title", out var titleElement))
-                        {
-                            var title = titleElement.GetString();
-                            if (title?.Contains("commune", StringComparison.OrdinalIgnoreCase) == true ||
-                                title?.Contains("COM_UDI", StringComparison.OrdinalIgnoreCase) == true)
-                            {
-                                // In production, this would fetch and parse the actual file
-                                // For now, we demonstrate the structure
-                            }
-                        }
-                    }
+                        INSEECode      = inseeCode,
+                        Name           = communeName,
+                        DepartmentCode = deptCode
+                    };
+                    communeDict[inseeCode] = commune;
                 }
-            }
-            catch
-            {
-                // If parsing fails, return empty list
-            }
 
-            return communes;
-        }
-
-        /// <summary>
-        /// Parses a date string from various formats used by data.gouv.fr.
-        /// </summary>
-        private DateTime? ParseDataGouvDate(string? dateString)
-        {
-            if (string.IsNullOrWhiteSpace(dateString))
-                return null;
-
-            // Try various date formats
-            string[] formats = new[]
-            {
-                "yyyy-MM-dd",
-                "dd/MM/yyyy",
-                "yyyy-MM-dd HH:mm:ss",
-                "dd/MM/yyyy HH:mm:ss"
-            };
-
-            foreach (var format in formats)
-            {
-                if (DateTime.TryParseExact(dateString, format, CultureInfo.InvariantCulture, 
-                    DateTimeStyles.None, out var result))
+                var network = new WaterNetwork
                 {
-                    return result;
-                }
+                    Code                 = networkCode,
+                    Name                 = networkName,
+                    PrincipalCommuneCode = inseeCode,
+                    Neighborhood         = quartier == "-" ? null : quartier,
+                    DepartmentCode       = deptCode
+                };
+
+                if (DateTime.TryParse(supplyStart, CultureInfo.InvariantCulture,
+                        DateTimeStyles.None, out var date))
+                    network.SupplyStartDate = date;
+
+                commune.Networks.Add(network);
             }
 
-            // Fallback to general parsing
-            if (DateTime.TryParse(dateString, CultureInfo.InvariantCulture, 
-                DateTimeStyles.AllowWhiteSpaces, out var generalResult))
-            {
-                return generalResult;
-            }
-
-            return null;
+            return communeDict.Values.ToList();
         }
 
         /// <summary>
-        /// Parses a time string in HH:mm or HH:mm:ss format.
+        /// Splits a fully-quoted CSV line: "v1","v2","v3" → ["v1","v2","v3"]
         /// </summary>
-        private TimeSpan? ParseDataGouvTime(string? timeString)
-        {
-            if (string.IsNullOrWhiteSpace(timeString))
-                return null;
-
-            if (TimeSpan.TryParseExact(timeString, new[] { "hh\\:mm", "hh\\:mm\\:ss" }, 
-                CultureInfo.InvariantCulture, out var result))
-            {
-                return result;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Determines parameter type from a parameter code or value.
-        /// </summary>
-        private ParameterType DetermineParameterType(string parameterCode, string measuredValue)
-        {
-            // Parameters with numeric limits
-            var numericParameters = new[] 
-            { 
-                "CLVYL", "BDT", "CDT", "CDT25", "PEST", "NITRATE", "NITRITE",
-                "COLIF", "E.COLI", "ENTEROCOQUE", "RADIACTIVITE"
-            };
-
-            if (numericParameters.Contains(parameterCode, StringComparer.OrdinalIgnoreCase))
-                return ParameterType.Numeric;
-
-            // Check if measured value looks numeric
-            if (decimal.TryParse(measuredValue, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
-                return ParameterType.Numeric;
-
-            // Default to qualitative
-            return ParameterType.Qualitative;
-        }
+        private static string[] SplitQuotedCsvLine(string line) =>
+            line.Split("\",\"").Select(p => p.Trim('"')).ToArray();
     }
 }

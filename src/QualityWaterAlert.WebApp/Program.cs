@@ -12,7 +12,7 @@ builder.Services.AddHttpClient<IDataProvider, DataGouvFrProvider>(client =>
 {
     client.BaseAddress = new Uri("https://www.data.gouv.fr/");
     client.DefaultRequestHeaders.Add("User-Agent", "QualityWaterAlert/1.0");
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(120); // large CSV download
 });
 
 var app = builder.Build();
