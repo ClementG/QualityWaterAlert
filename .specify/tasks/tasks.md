@@ -203,17 +203,32 @@
     - Component styles added to `wwwroot/app.css`
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.1.5** Create AlertSubscription component
+- [x] **2.1.5** Create AlertSubscription component
   - Description: Blazor component with bell icon and email subscription modal
   - Location: `src/QualityWaterAlert.WebApp/Components/AlertSubscription.razor`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Bouton cloche SVG qui ouvre une modal overlay CSS pure (sans JS interop)
+    - Modal avec `EditForm` + `DataAnnotationsValidator` — validation [Required] + [EmailAddress]
+    - Spinner sur le bouton submit pendant le traitement
+    - Paramètres: `Commune?`, `EventCallback<string> OnSubscribed`
+    - Fermeture par clic sur l'overlay, bouton ×, ou bouton Annuler
+    - Component styles added to `wwwroot/app.css`
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.1.6** Create AlertConfirmation component
+- [x] **2.1.6** Create AlertConfirmation component
   - Description: Blazor component to display confirmation after email subscription
   - Location: `src/QualityWaterAlert.WebApp/Components/AlertConfirmation.razor`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Bandeau vert "Inscription confirmée" avec email et nom de commune
+    - Paramètres: `Email?`, `Commune?`, `EventCallback OnDismiss`, `Size` ("sm"/"md"/"lg")
+    - Bouton × conditionnel (affiché uniquement si `OnDismiss` est branché)
+    - `aria-live="polite"` pour l'accessibilité
+    - Component styles added to `wwwroot/app.css`
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ### Epic 2.2: Pages & Routing
 
@@ -377,13 +392,13 @@
 - ✅ **Total Phase 1.4: 108/108 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
-### Phase 2.1 Progress: 🔄 IN PROGRESS (3/6 tasks done)
+### Phase 2.1 Progress: ✅ COMPLETE (6/6 tasks done)
 - ✅ 2.1.1 Main layout and navigation (MainLayout.razor, NavMenu.razor)
 - ✅ 2.1.2 CommuneSearch component — search by name or postal code, EventCallback, Bootstrap dropdown
 - ✅ 2.1.3 WaterQualityDisplay component — conformity banner, stat cards, problematic params, samplings table, measurements table
 - ✅ 2.1.4 ComplianceIndicator component — pill coloré 3 tailles, 'C'/'N'/null, utilisé dans WaterQualityDisplay
-- ⬜ 2.1.5 AlertSubscription component
-- ⬜ 2.1.6 AlertConfirmation component
+- ✅ 2.1.5 AlertSubscription component — modal overlay CSS pure, EditForm validé, EventCallback<string>
+- ✅ 2.1.6 AlertConfirmation component — bandeau vert, email + commune, OnDismiss optionnel
 
 ### Phase 1.5 Progress: ✅ COMPLETE (All 2 tasks done)
 - ✅ 1.5.1 DataGouvFrProvider tests (10/10 PASSING)
