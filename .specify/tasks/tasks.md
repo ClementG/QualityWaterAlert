@@ -174,17 +174,34 @@
     - Component styles added to `wwwroot/app.css`
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.1.3** Create WaterQualityDisplay component
+- [x] **2.1.3** Create WaterQualityDisplay component
   - Description: Blazor component to display water quality data with tables and charts
   - Location: `src/QualityWaterAlert.WebApp/Components/WaterQualityDisplay.razor`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Conformity banner (green/red alert) with commune name, status text, and date range
+    - 4 summary stat cards: Prélèvements, Conformes, Non-conformes, Taux de conformité (color-coded)
+    - Problematic parameters table (only rendered when non-conform results exist)
+    - Recent samplings table with bacterio/chemical/overall conformity badges (configurable via `MaxSamplings`, default 10)
+    - Latest sampling measurements table with measured value, regulatory limit, and status
+    - `IsLoading` parameter shows a spinner while data is being fetched
+    - All computed values (`Latest`, `Oldest`, `Problematic`, `RecentSamplings`, `PctColor`) exposed as properties in `@code` section — no inline `@{ }` blocks in template
+    - Component styles added to `wwwroot/app.css` (`.wqd-stat-value`, `.wqd-danger-header`)
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.1.4** Create ComplianceIndicator component
+- [x] **2.1.4** Create ComplianceIndicator component
   - Description: Blazor component for visual compliance status (green/red, compliant/non-compliant)
   - Location: `src/QualityWaterAlert.WebApp/Components/ComplianceIndicator.razor`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Parameters: `ConformityStatus` (char?), `ShowLabel` (bool, default true), `Size` ("sm"/"md"/"lg", default "md")
+    - 'C' → green pill "Conforme", 'N' → red pill "Non-conforme", null → yellow "Inconnu"
+    - `role="img"` + `aria-label` pour l'accessibilité
+    - WaterQualityDisplay refactorisé pour utiliser `<ComplianceIndicator>` (méthode ConformityBadge supprimée)
+    - Component styles added to `wwwroot/app.css`
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [ ] **2.1.5** Create AlertSubscription component
   - Description: Blazor component with bell icon and email subscription modal
@@ -360,11 +377,11 @@
 - ✅ **Total Phase 1.4: 108/108 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
-### Phase 2.1 Progress: 🔄 IN PROGRESS (1/6 tasks done)
+### Phase 2.1 Progress: 🔄 IN PROGRESS (3/6 tasks done)
 - ✅ 2.1.1 Main layout and navigation (MainLayout.razor, NavMenu.razor)
 - ✅ 2.1.2 CommuneSearch component — search by name or postal code, EventCallback, Bootstrap dropdown
-- ⬜ 2.1.3 WaterQualityDisplay component
-- ⬜ 2.1.4 ComplianceIndicator component
+- ✅ 2.1.3 WaterQualityDisplay component — conformity banner, stat cards, problematic params, samplings table, measurements table
+- ✅ 2.1.4 ComplianceIndicator component — pill coloré 3 tailles, 'C'/'N'/null, utilisé dans WaterQualityDisplay
 - ⬜ 2.1.5 AlertSubscription component
 - ⬜ 2.1.6 AlertConfirmation component
 

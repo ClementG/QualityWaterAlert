@@ -1,0 +1,224 @@
+@if (IsLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement…</span>
+        </div>
+        <p class="text-muted mt-3 small">Récupération des données qualité…</p>
+    </div>
+}
+else if (Analysis is not null)
+{
+    @* ---- Conformity banner ---- *@
+    <div class="alert @(Analysis.OverallConformity == 'C' ? "alert-success" : "alert-danger") d-flex align-items-center gap-3 mb-4"
+         role="status">
+        <span class="fs-3" aria-hidden="true">@(Analysis.OverallConformity == 'C' ? "✅" : "❌")</span>
+        <div>
+            <strong class="d-block fs-5">@Analysis.Commune.Name</strong>
+            <span>
+                @(Analysis.OverallConformity == 'C'
+                    ? "Eau conforme aux normes en vigueur"
+                    : "Eau non conforme — des anomalies ont été détectées")
+            </span>
+            @if (Oldest is not null && Latest is not null)
+            {
+                <small class="d-block opacity-75 mt-1">
+                    Données du @Oldest.SamplingDate.ToString("dd/MM/yyyy") au @Latest.SamplingDate.ToString("dd/MM/yyyy")
+                </small>
+            }
+        </div>
+    </div>
+
+    @* ---- Summary stats cards ---- *@
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="wqd-stat-value text-primary">@Analysis.TotalSamplings</div>
+                    <div class="text-muted small mt-1">Prélèvements</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="wqd-stat-value text-success">@Analysis.ConformSamplings</div>
+                    <div class="text-muted small mt-1">Conformes</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="wqd-stat-value @(Analysis.NonConformSamplings > 0 ? "text-danger" : "text-success")">
+                        @Analysis.NonConformSamplings
+                    </div>
+                    <div class="text-muted small mt-1">Non-conformes</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="wqd-stat-value @PctColor">@Analysis.ConformityPercentage&nbsp;%</div>
+                    <div class="text-muted small mt-1">Taux de conformité</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ---- Problematic parameters (only when non-conform results exist) ---- *@
+    @if (Problematic.Count > 0)
+    {
+        <div class="card border-danger mb-4">
+            <div class="card-header wqd-danger-header d-flex align-items-center gap-2">
+                <span aria-hidden="true">⚠️</span>
+                <strong>Paramètres non conformes</strong>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Paramètre</th>
+                            <th class="text-end pe-3">Dépassements</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (_, name, count) in Problematic)
+                        {
+                            <tr>
+                                <td>@name</td>
+                                <td class="text-end pe-3">
+                                    <span class="badge bg-danger rounded-pill">@count</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* ---- Recent sampling events ---- *@
+    @if (RecentSamplings.Count > 0)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <strong>Prélèvements récents</strong>
+                @if (Analysis.TotalSamplings > MaxSamplings)
+                {
+                    <span class="badge bg-secondary">@MaxSamplings / @Analysis.TotalSamplings</span>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Réseau</th>
+                            <th class="text-center">Bactério.</th>
+                            <th class="text-center">Chimique</th>
+                            <th class="text-center">Paramètres</th>
+                            <th class="text-center">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in RecentSamplings)
+                        {
+                            <tr class="@(s.IsNonConform ? "table-danger" : "")">
+                                <td class="text-nowrap">@s.SamplingDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-muted small">
+                                    @(string.IsNullOrWhiteSpace(s.NetworkCode) ? "—" : s.NetworkCode)
+                                </td>
+                                <td class="text-center">
+                                    <ComplianceIndicator ConformityStatus="s.BacterioConformity" ShowLabel="false" Size="sm" />
+                                </td>
+                                <td class="text-center">
+                                    <ComplianceIndicator ConformityStatus="s.ChemicalConformity" ShowLabel="false" Size="sm" />
+                                </td>
+                                <td class="text-center">
+                                    @if (s.GetNonConformMeasurementCount() > 0)
+                                    {
+                                        <span class="badge bg-danger">@s.GetNonConformMeasurementCount() NC</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">@s.Measurements.Count</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <ComplianceIndicator ConformityStatus="s.GetOverallConformity()" ShowLabel="false" Size="sm" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* ---- Measurements from the latest sampling ---- *@
+    @if (Latest is not null && Latest.Measurements.Count > 0)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <strong>Mesures — dernier prélèvement</strong>
+                <span class="text-muted small">@Latest.SamplingDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Paramètre</th>
+                            <th>Valeur mesurée</th>
+                            <th>Limite réglementaire</th>
+                            <th class="text-center">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Latest.Measurements.OrderBy(m => m.IsConform).ThenBy(m => m.DisplayName))
+                        {
+                            <tr class="@(m.IsNonConform ? "table-danger" : "")">
+                                <td>@m.DisplayName</td>
+                                <td>@m.MeasurementDisplay</td>
+                                <td class="text-muted small">
+                                    @(string.IsNullOrWhiteSpace(m.QualityLimit) || m.QualityLimit == "X" ? "—" : m.QualityLimit)
+                                </td>
+                                <td class="text-center">@m.StatusBadge</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    /// <summary>The water quality analysis to display. Nothing is rendered when null.</summary>
+    [Parameter] public WaterQualityAnalysis? Analysis { get; set; }
+
+    /// <summary>Shows a loading spinner instead of data while true.</summary>
+    [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>Maximum number of sampling events shown in the recent samplings table.</summary>
+    [Parameter] public int MaxSamplings { get; set; } = 10;
+
+    private SamplingEvent? Latest => Analysis?.GetLatestSampling();
+    private SamplingEvent? Oldest => Analysis?.GetOldestSampling();
+
+    private List<(string Code, string Name, int Count)> Problematic =>
+        Analysis?.GetProblematicParameters() ?? [];
+
+    private List<SamplingEvent> RecentSamplings =>
+        Analysis?.SamplingEvents
+            .OrderByDescending(s => s.SamplingDate)
+            .Take(MaxSamplings)
+            .ToList() ?? [];
+
+    private string PctColor =>
+        (Analysis?.ConformityPercentage ?? 0) >= 95m ? "text-success"
+        : (Analysis?.ConformityPercentage ?? 0) >= 75m ? "text-warning"
+        : "text-danger";
+
+}

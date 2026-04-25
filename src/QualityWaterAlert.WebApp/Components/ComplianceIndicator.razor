@@ -1,0 +1,43 @@
+<span class="compliance-indicator compliance-indicator--@Size @StatusClass"
+      role="img"
+      aria-label="@AriaLabel">
+    <span aria-hidden="true">@Icon</span>
+    @if (ShowLabel)
+    {
+        <span>@Label</span>
+    }
+</span>
+
+@code {
+    /// <summary>Conformity status to display: 'C' = conform, 'N' = non-conform, null = unknown.</summary>
+    [Parameter] public char? ConformityStatus { get; set; }
+
+    /// <summary>Show the text label alongside the icon.</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    /// <summary>Visual size: "sm", "md" (default), or "lg".</summary>
+    [Parameter] public string Size { get; set; } = "md";
+
+    private string StatusClass => ConformityStatus switch
+    {
+        'C' => "compliance-conform",
+        'N' => "compliance-nonconform",
+        _ => "compliance-unknown"
+    };
+
+    private string Icon => ConformityStatus switch
+    {
+        'C' => "✅",
+        'N' => "❌",
+        _ => "⚠️"
+    };
+
+    private string Label => ConformityStatus switch
+    {
+        'C' => "Conforme",
+        'N' => "Non-conforme",
+        _ => "Inconnu"
+    };
+
+    private string AriaLabel => $"Statut de conformité : {Label}";
+}
