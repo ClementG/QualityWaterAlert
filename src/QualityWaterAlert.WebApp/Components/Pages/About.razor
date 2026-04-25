@@ -1,0 +1,70 @@
+@page "/about"
+
+<PageTitle>À propos — Quality Water Alert</PageTitle>
+
+<div class="about-container">
+
+    <h1 class="h3 mb-4">À propos de Quality Water Alert</h1>
+
+    <section class="mb-4">
+        <h2 class="h5">Qu'est-ce que c'est ?</h2>
+        <p>
+            Quality Water Alert est une application qui vous permet de consulter la qualité
+            de l'eau potable distribuée dans votre commune, à partir des analyses officielles
+            réalisées dans le cadre du contrôle sanitaire de l'État.
+        </p>
+    </section>
+
+    <section class="mb-4">
+        <h2 class="h5">Source des données</h2>
+        <p>
+            Les données proviennent du jeu de données ouvert
+            <strong>« Résultats du contrôle sanitaire de l'eau du robinet »</strong>
+            publié sur <strong>data.gouv.fr</strong> par le ministère chargé de la santé.
+        </p>
+        <p>Ce jeu de données comprend trois fichiers :</p>
+        <ul class="small">
+            <li><code>DIS_COM_UDI_2025.txt</code> — Communes et unités de distribution (UDI)</li>
+            <li><code>DIS_PLV_2025.txt</code> — Prélèvements (événements d'échantillonnage)</li>
+            <li><code>DIS_RESULT_2025.txt</code> — Résultats des analyses par paramètre</li>
+        </ul>
+    </section>
+
+    <section class="mb-4">
+        <h2 class="h5">Comment utiliser l'application ?</h2>
+        <ol class="small">
+            <li class="mb-1">Sur la page d'accueil, saisissez le nom de votre commune ou votre code postal.</li>
+            <li class="mb-1">Sélectionnez votre commune dans la liste de résultats.</li>
+            <li class="mb-1">Consultez le bilan de conformité et le détail des prélèvements récents.</li>
+            <li class="mb-1">Abonnez-vous aux alertes pour être notifié par email en cas de changement.</li>
+        </ol>
+    </section>
+
+    <section class="mb-4">
+        <h2 class="h5">Interprétation des indicateurs</h2>
+        <div class="d-flex flex-column gap-2 mt-2">
+            <div class="d-flex align-items-center gap-2 small">
+                <ComplianceIndicator ConformityStatus="'C'" Size="sm" />
+                <span>Eau conforme à toutes les normes réglementaires en vigueur.</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small">
+                <ComplianceIndicator ConformityStatus="'N'" Size="sm" />
+                <span>Au moins un paramètre dépasse la limite autorisée.</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small">
+                <ComplianceIndicator ConformityStatus="null" Size="sm" />
+                <span>Statut inconnu ou données insuffisantes pour conclure.</span>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="h5">Données personnelles</h2>
+        <p class="small text-muted mb-0">
+            L'adresse email fournie lors de l'abonnement aux alertes est utilisée
+            uniquement pour l'envoi des notifications de qualité d'eau.
+            Elle n'est ni vendue ni transmise à des tiers.
+        </p>
+    </section>
+
+</div>

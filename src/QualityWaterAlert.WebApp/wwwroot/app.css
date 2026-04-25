@@ -112,6 +112,67 @@ h1:focus {
     color: #dc3545;
 }
 
+/* Home page */
+.home-hero {
+    background: linear-gradient(160deg, #e8f4fd 0%, #f0f9ff 60%, #fff 100%);
+    padding: 4rem 1rem 3rem;
+    display: flex;
+    justify-content: center;
+}
+
+.home-hero-content {
+    width: 100%;
+    max-width: 560px;
+}
+
+.home-hero-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.home-hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0d3b66;
+    margin-bottom: 0.5rem;
+}
+
+.home-hero-subtitle {
+    color: #4a6a8a;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+.home-search-wrapper {
+    box-shadow: 0 4px 20px rgba(0, 107, 183, 0.12);
+    border-radius: 0.5rem;
+}
+
+.home-feature {
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+    height: 100%;
+}
+
+.home-feature-icon {
+    font-size: 2rem;
+    display: block;
+}
+
+/* Results page */
+.results-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* About page */
+.about-container {
+    max-width: 720px;
+    padding: 1.5rem 0;
+}
+
 /* AlertConfirmation component */
 .alert-confirm {
     display: flex;

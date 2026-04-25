@@ -1,0 +1,113 @@
+@page "/results/{InseeCode}"
+@page "/results"
+@inject IDataProvider DataProvider
+@inject NavigationManager Nav
+
+<PageTitle>@(_analysis?.Commune.Name ?? InseeCode ?? "Résultats") — Quality Water Alert</PageTitle>
+
+<div class="results-header mb-4">
+
+    <a href="/" class="text-muted small text-decoration-none d-inline-block mb-2">
+        ← Accueil
+    </a>
+
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div>
+            @if (_analysis is not null)
+            {
+                <h1 class="h3 mb-1">@_analysis.Commune.Name</h1>
+                <span class="text-muted small">
+                    Département @_analysis.Commune.DepartmentCode &middot; Code INSEE @InseeCode
+                </span>
+            }
+            else if (_isLoading)
+            {
+                <h1 class="h3 mb-1 placeholder-glow">
+                    <span class="placeholder col-5"></span>
+                </h1>
+            }
+            else
+            {
+                <h1 class="h3 mb-1">Code INSEE : @InseeCode</h1>
+            }
+        </div>
+
+        @if (_analysis is not null)
+        {
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <ComplianceIndicator ConformityStatus="_analysis.OverallConformity" Size="lg" />
+                <AlertSubscription Commune="_analysis.Commune" OnSubscribed="HandleSubscribed" />
+            </div>
+        }
+    </div>
+
+    @if (_subscribed && _subscribedEmail is not null)
+    {
+        <div class="mt-3">
+            <AlertConfirmation Email="_subscribedEmail"
+                               Commune="_analysis?.Commune"
+                               OnDismiss="DismissConfirmation" />
+        </div>
+    }
+
+    @if (_errorMessage is not null)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2 mt-3" role="alert">
+            <span aria-hidden="true">⚠️</span>
+            <span>@_errorMessage</span>
+        </div>
+    }
+
+</div>
+
+<WaterQualityDisplay Analysis="_analysis" IsLoading="_isLoading" />
+
+@code {
+    [Parameter] public string? InseeCode { get; set; }
+
+    private WaterQualityAnalysis? _analysis;
+    private bool _isLoading;
+    private string? _errorMessage;
+    private bool _subscribed;
+    private string? _subscribedEmail;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(InseeCode))
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        _analysis = null;
+        _errorMessage = null;
+        _subscribed = false;
+        _subscribedEmail = null;
+        _isLoading = true;
+
+        try
+        {
+            _analysis = await DataProvider.GetWaterQualityAnalysisAsync(InseeCode, null, null);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Impossible de charger les données pour le code INSEE \"{InseeCode}\". {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void HandleSubscribed(string email)
+    {
+        _subscribedEmail = email;
+        _subscribed = true;
+    }
+
+    private void DismissConfirmation()
+    {
+        _subscribed = false;
+        _subscribedEmail = null;
+    }
+}

@@ -230,25 +230,43 @@
     - Component styles added to `wwwroot/app.css`
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-### Epic 2.2: Pages & Routing
+### Epic 2.2: Pages & Routing ✅ COMPLETE
 
-- [ ] **2.2.1** Create Home page
+- [x] **2.2.1** Create Home page
   - Description: Main landing page with search functionality
-  - Location: `src/QualityWaterAlert.WebApp/Pages/Home.razor`
-  - Status: Not Started
+  - Location: `src/QualityWaterAlert.WebApp/Components/Pages/Home.razor`
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Hero avec gradient bleu, titre, sous-titre et CommuneSearch
+    - Sélection d'une commune → NavigationManager vers `/results/{inseeCode}`
+    - 3 blocs features (Données officielles, Conformité instantanée, Alertes email)
+    - Styles home-hero / home-feature ajoutés à app.css
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.2.2** Create Results page
+- [x] **2.2.2** Create Results page
   - Description: Display water quality analysis results for selected commune
-  - Location: `src/QualityWaterAlert.WebApp/Pages/Results.razor`
-  - Status: Not Started
+  - Location: `src/QualityWaterAlert.WebApp/Components/Pages/Results.razor`
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Routes: `@page "/results/{InseeCode}"` + `@page "/results"` (redirige vers `/`)
+    - Header: nom commune, dept/INSEE, ComplianceIndicator (lg), AlertSubscription
+    - Chargement async via `IDataProvider.GetWaterQualityAnalysisAsync` avec état IsLoading
+    - Gestion d'erreur avec alerte warning
+    - AlertConfirmation affiché après abonnement, dismissable
+    - Skeleton placeholder pour le titre pendant le chargement
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.2.3** Create About page
+- [x] **2.2.3** Create About page
   - Description: Information about the application, data sources, and how to use it
-  - Location: `src/QualityWaterAlert.WebApp/Pages/About.razor`
-  - Status: Not Started
+  - Location: `src/QualityWaterAlert.WebApp/Components/Pages/About.razor`
+  - Status: Completed
   - Priority: Medium
+  - Implementation:
+    - 5 sections: présentation, source données (fichiers .txt), comment utiliser, légende des indicateurs (ComplianceIndicator live), RGPD
+    - Layout max-width 720px
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ### Epic 2.3: Styling & Modern UI
 
