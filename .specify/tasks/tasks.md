@@ -56,13 +56,23 @@
 - [x] **1.3.2** Implement DataGouvFrProvider
   - Description: Create API client to fetch data from data.gouv.fr API
   - Location: `src/QualityWaterAlert.Infrastructure/Providers/DataGouvFrProvider.cs`
-  - Status: Completed
+  - Status: Completed (rewritten)
   - Priority: Critical
-  - Implementation: Full API client implementation (420+ lines)
-    - GetWaterQualityAnalysisAsync() - Fetches complete water quality analysis for a commune
-    - GetAllCommunesAsync() - Retrieves all available communes with 60-minute cache
-    - Full data parsing and date/time handling
-    - Robust error handling with meaningful exceptions
+  - Implementation: Full production pipeline using HTTP Range requests (~500 lines)
+    - Correct dataset ID: `5cf8d9ed8b4c4110294c841d`
+    - **HTTP Range requests** on the remote ZIP — no full 274 MB download:
+      - 1 API call → discovers latest `dis-YYYY-dept.zip` URL (cached 24 h)
+      - 2 range requests → reads ZIP Central Directory (~20 KB)
+      - 4 range requests → extracts only the needed dept files (~2–10 MB per dept)
+    - `GetAllCommunesAsync()` — parses `DIS_COM_UDI_YYYY.txt`, all communes cached 24 h
+    - `GetWaterQualityAnalysisAsync()` — derives dept from INSEE code, fetches and parses
+      `DIS_PLV_YYYY_{dept}.txt` + `DIS_RESULT_YYYY_{dept}.txt`, joins them, computes
+      conformity via `ComplianceChecker`, returns complete `WaterQualityAnalysis`
+    - Per-department in-memory cache (24 h TTL, `ConcurrentDictionary`)
+    - URL and Central Directory cached independently (URL cached even if CD load fails)
+    - RFC-4180-compliant CSV parser (handles empty unquoted fields, escaped quotes)
+    - ZIP format: EOCD → CD parse → local file header → DEFLATE decompress
+    - `Program.cs`: registered as singleton with named `HttpClient` (2-min timeout)
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [x] **1.3.3** Create IEmailService interface
@@ -127,15 +137,18 @@
 - [x] **1.5.1** Write tests for DataGouvFrProvider
   - Description: Mock API calls and test data parsing
   - Location: `tests/QualityWaterAlert.Infrastructure.Tests/Providers/DataGouvFrProviderTests.cs`
-  - Status: Completed
+  - Status: Completed (updated to match rewritten provider)
   - Priority: Critical
   - Test Results: **10/10 PASSING** (100%)
     - Constructor validation (null HttpClient) — passing
+    - Constructor valid — passing
     - ArgumentException for invalid INSEE codes (null, empty, whitespace) — passing
     - InvalidOperationException when commune not found — passing
-    - Graceful fallback to empty list on API failure — passing
-    - Cache hit: second call reuses result without extra HTTP request — passing
-    - Return type validation — passing
+    - InvalidOperationException on API failure (replaces former "empty list" fallback) — passing
+    - InvalidOperationException when no matching ZIP resource — passing
+    - Cache: dataset API queried only once; URL cached even if ZIP parsing fails — passing
+  - Test doubles: `StubHttpMessageHandler`, `CountingHttpMessageHandler`, `UrlAwareCountingHandler`
+    (URL-aware handler counts calls to `/api/1/datasets/` separately from ZIP range requests)
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 - [x] **1.5.2** Write tests for EmailService
@@ -268,23 +281,48 @@
     - Layout max-width 720px
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-### Epic 2.3: Styling & Modern UI
+### Epic 2.3: Styling & Modern UI ✅ COMPLETE
 
-- [ ] **2.3.1** Integrate MudBlazor or Tailwind CSS
+- [x] **2.3.1** Integrate MudBlazor or Tailwind CSS
   - Description: Set up modern UI framework for responsive design
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - MudBlazor 8 configured: `AddMudServices()` + CSS/JS in App.razor
+    - Custom blue water theme (Primary #1565C0, dark drawer #1A237E)
+    - `MudThemeProvider`, `MudPopoverProvider`, `MudDialogProvider`, `MudSnackbarProvider` in MainLayout
+    - Bootstrap CSS removed; all components migrated to MudBlazor
+    - MainLayout: `MudLayout` + `MudAppBar` + `MudDrawer` with responsive hamburger (mobile/desktop)
+    - NavMenu: `MudNavLink` items
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.3.2** Create responsive CSS/styling
+- [x] **2.3.2** Create responsive CSS/styling
   - Description: Ensure the application looks good on mobile, tablet, and desktop
-  - Location: `src/QualityWaterAlert.WebApp/wwwroot/css/`
-  - Status: Not Started
+  - Location: `src/QualityWaterAlert.WebApp/wwwroot/app.css`
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - All pages migrated to `MudGrid`/`MudItem` (responsive xs/sm/md breakpoints)
+    - `CommuneSearch` rewritten with `MudAutocomplete` (mobile-friendly, accessible)
+    - `AlertSubscription` → `IDialogService` + `MudDialog` (new `AlertSubscriptionDialog.razor`)
+    - `AlertConfirmation` → `MudAlert`
+    - `WaterQualityDisplay` → `MudCard` + custom `.wqa-table` CSS (overflow-x-auto)
+    - Home hero full-width gradient; features in `MudGrid` 3-column responsive
+    - `app.css` rewritten: MudBlazor CSS variable utilities, custom table/badge styles
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
-- [ ] **2.3.3** Add chart library (e.g., Chart.js)
+- [x] **2.3.3** Add chart library (e.g., Chart.js)
   - Description: Integrate a charting library for data visualization
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Chart.js 4 via CDN (`chart.umd.min.js`)
+    - `wwwroot/js/charts.js`: `window.qwa.createDonutChart()` + `destroyChart()` interop helpers
+    - `Components/Charts/ConformityDonutChart.razor`: canvas-based donut chart, `IAsyncDisposable`
+    - Chart shows conforming vs non-conforming samplings (green/red) with legend + tooltips
+    - Placed alongside stat cards in `WaterQualityDisplay` (md=4 column, stacks on mobile)
+    - Graceful degradation: `JSException` caught if CDN fails to load
+  - Build Status: ✅ Clean (0 errors, 0 warnings)
 
 ## Phase 3: Containerization & Deployment
 
@@ -375,9 +413,9 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 14
+**Completed**: 17
 **In Progress**: 0
-**Not Started**: 27
+**Not Started**: 24
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
@@ -394,11 +432,11 @@
 
 ### Phase 1.3 Progress: ✅ COMPLETE (All 4 tasks done)
 - ✅ 1.3.1 IDataProvider interface (Completed)
-- ✅ 1.3.2 DataGouvFrProvider implementation (420+ lines)
-  - Full async API client for data.gouv.fr
-  - Commune fetching with 60-minute cache
-  - Sampling events and water quality measurements retrieval
-  - Robust error handling and data parsing
+- ✅ 1.3.2 DataGouvFrProvider implementation (rewritten, ~500 lines)
+  - HTTP Range requests — only fetches dept-specific files (~2–10 MB vs 274 MB full ZIP)
+  - Full PLV + RESULT pipeline: `GetWaterQualityAnalysisAsync` fully implemented
+  - Per-dept in-memory cache with 24 h TTL, URL/CD caches are independent layers
+  - RFC-4180 CSV parser, ComplianceChecker integration, correct dataset ID
   - Build Status: ✅ Clean (0 errors, 0 warnings)
 - ✅ 1.3.3 IEmailService interface (Completed)
 - ✅ 1.3.4 EmailService implementation (Completed)
@@ -410,6 +448,12 @@
 - ✅ **Total Phase 1.4: 108/108 tests PASSING (100% pass rate)**
 - ✅ Build verified: All projects compile, 0 errors, 0 warnings
 
+### Phase 2.3 Progress: ✅ COMPLETE (3/3 tasks done)
+- ✅ 2.3.1 MudBlazor 8 fully configured — custom theme, layout, all components migrated
+- ✅ 2.3.2 Responsive CSS — MudGrid breakpoints, MudAutocomplete, MudDialog, app.css refactored
+- ✅ 2.3.3 Chart.js 4 — ConformityDonutChart.razor + charts.js, displayed in WaterQualityDisplay
+- ✅ Build verified: 0 errors, 0 warnings; 108/108 Core tests PASSING
+
 ### Phase 2.1 Progress: ✅ COMPLETE (6/6 tasks done)
 - ✅ 2.1.1 Main layout and navigation (MainLayout.razor, NavMenu.razor)
 - ✅ 2.1.2 CommuneSearch component — search by name or postal code, EventCallback, Bootstrap dropdown
@@ -420,7 +464,9 @@
 
 ### Phase 1.5 Progress: ✅ COMPLETE (All 2 tasks done)
 - ✅ 1.5.1 DataGouvFrProvider tests (10/10 PASSING)
-  - Constructor validation, INSEE code validation, not-found error, API failure fallback, cache hit
+  - Constructor validation, INSEE code validation, not-found error
+  - API failure now throws (no silent empty-list fallback)
+  - URL cache: API only queried once even after ZIP-parsing failure (UrlAwareCountingHandler)
 - ✅ 1.5.2 EmailService tests (12/12 PASSING)
   - Constructor validation, SendEmailAsync argument validation
 - ✅ **Total Phase 1.5: 22/22 tests PASSING (100% pass rate)**

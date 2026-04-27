@@ -11,11 +11,19 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddMudServices();
 
-builder.Services.AddHttpClient<IDataProvider, DataGouvFrProvider>(client =>
+// Named client for data.gouv.fr — range requests only fetch a few MB per call
+builder.Services.AddHttpClient("DataGouvFr", client =>
 {
     client.BaseAddress = new Uri("https://www.data.gouv.fr/");
     client.DefaultRequestHeaders.Add("User-Agent", "QualityWaterAlert/1.0");
-    client.Timeout = TimeSpan.FromSeconds(120); // large CSV download
+    client.Timeout = TimeSpan.FromMinutes(2);
+});
+
+// Singleton so the ZIP and per-department caches persist across requests
+builder.Services.AddSingleton<IDataProvider>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    return new DataGouvFrProvider(factory.CreateClient("DataGouvFr"));
 });
 
 var app = builder.Build();

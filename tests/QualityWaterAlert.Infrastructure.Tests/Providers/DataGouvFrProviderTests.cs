@@ -60,38 +60,45 @@ namespace QualityWaterAlert.Infrastructure.Tests.Providers
         // ── GetAllCommunesAsync ───────────────────────────────────────────────
 
         [Test]
-        public async Task GetAllCommunesAsync_ApiFailure_ReturnsEmptyList()
+        public void GetAllCommunesAsync_ApiFailure_ThrowsInvalidOperationException()
         {
-            var provider = new DataGouvFrProvider(MakeClient(HttpStatusCode.InternalServerError));
+            // The provider now throws rather than silently returning an empty list,
+            // so the UI can display a proper error message instead of "no results found".
+            var provider = new DataGouvFrProvider(
+                MakeClient(HttpStatusCode.InternalServerError));
 
-            var result = await provider.GetAllCommunesAsync();
-
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.Empty);
+            Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await provider.GetAllCommunesAsync());
         }
 
         [Test]
-        public async Task GetAllCommunesAsync_CalledTwice_ReturnsCachedResult()
+        public void GetAllCommunesAsync_NoMatchingResource_ThrowsInvalidOperationException()
         {
-            var handler = new CountingHttpMessageHandler(HttpStatusCode.OK, "{}");
-            var provider = new DataGouvFrProvider(new HttpClient(handler));
-
-            await provider.GetAllCommunesAsync();
-            await provider.GetAllCommunesAsync();
-
-            // Second call must hit the cache — only one real HTTP request should have been made
-            Assert.That(handler.CallCount, Is.EqualTo(1));
-        }
-
-        [Test]
-        public async Task GetAllCommunesAsync_ValidResponse_ReturnsListOfCommunes()
-        {
+            // The dataset API returns a valid JSON object but with no dis-YYYY-dept.zip resource.
             var provider = new DataGouvFrProvider(MakeClient(HttpStatusCode.OK, "{}"));
 
-            var result = await provider.GetAllCommunesAsync();
+            Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await provider.GetAllCommunesAsync());
+        }
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.InstanceOf<List<QualityWaterAlert.Core.Models.Commune>>());
+        [Test]
+        public async Task GetAllCommunesAsync_CalledTwice_DatasetApiQueriedOnlyOnce()
+        {
+            // The ZIP URL is discovered via one API call and then cached for 24 h.
+            // Even if the subsequent ZIP range requests fail (the mock returns invalid
+            // ZIP bytes), the dataset API endpoint must not be queried again.
+            var handler = new UrlAwareCountingHandler(
+                apiUrl: "/api/1/datasets/",
+                apiResponse: """{"resources":[{"title":"dis-2025-dept.zip","url":"https://example.com/dis-2025-dept.zip"}]}""");
+
+            var provider = new DataGouvFrProvider(
+                new HttpClient(handler) { BaseAddress = new Uri("https://www.data.gouv.fr/") });
+
+            try { await provider.GetAllCommunesAsync(); } catch { }
+            try { await provider.GetAllCommunesAsync(); } catch { }
+
+            Assert.That(handler.ApiCallCount, Is.EqualTo(1),
+                "The dataset API must be queried exactly once; the URL is cached for 24 h.");
         }
     }
 
@@ -121,6 +128,38 @@ namespace QualityWaterAlert.Infrastructure.Tests.Providers
                 Content = new StringContent(content, Encoding.UTF8, "application/json")
             };
             return Task.FromResult(response);
+        }
+    }
+
+    /// <summary>
+    /// Counts requests whose path contains <paramref name="apiUrl"/> separately from
+    /// all other requests (e.g., ZIP range requests to an external CDN).
+    /// </summary>
+    internal sealed class UrlAwareCountingHandler(string apiUrl, string apiResponse) : HttpMessageHandler
+    {
+        public int ApiCallCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            bool isApiCall = request.RequestUri?.PathAndQuery.Contains(
+                apiUrl, StringComparison.OrdinalIgnoreCase) == true;
+
+            if (isApiCall)
+            {
+                ApiCallCount++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(apiResponse, Encoding.UTF8, "application/json")
+                });
+            }
+
+            // For ZIP range requests: return 206 with empty body (will fail ZIP parsing —
+            // that's fine; we only care that the API endpoint is not re-queried).
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.PartialContent)
+            {
+                Content = new ByteArrayContent(Array.Empty<byte>())
+            });
         }
     }
 }
