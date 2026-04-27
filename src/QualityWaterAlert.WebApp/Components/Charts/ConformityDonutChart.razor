@@ -1,0 +1,38 @@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<canvas id="@_chartId"
+        width="220"
+        height="220"
+        aria-label="Répartition des prélèvements : @ConformCount conformes sur @TotalCount"
+        role="img"
+        style="max-width:220px;max-height:220px;"></canvas>
+
+@code {
+    [Parameter] public int ConformCount { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+
+    private readonly string _chartId = $"conform-chart-{Guid.NewGuid():N}";
+    private int _lastConform = -1;
+    private int _lastTotal = -1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (TotalCount > 0 && (ConformCount != _lastConform || TotalCount != _lastTotal))
+        {
+            _lastConform = ConformCount;
+            _lastTotal = TotalCount;
+            try
+            {
+                await JS.InvokeVoidAsync("qwa.createDonutChart", _chartId, ConformCount, TotalCount - ConformCount);
+            }
+            catch (JSException) { }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("qwa.destroyChart", _chartId); }
+        catch { }
+    }
+}

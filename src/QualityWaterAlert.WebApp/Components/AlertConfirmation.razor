@@ -1,44 +1,24 @@
-<div class="alert-confirm @SizeClass" role="status" aria-live="polite">
-    <span class="alert-confirm-icon" aria-hidden="true">✅</span>
-    <div class="alert-confirm-content">
-        <strong class="d-block">Inscription confirmée !</strong>
-        @if (!string.IsNullOrWhiteSpace(Email))
-        {
-            <span class="text-muted small">
-                Vous recevrez les alertes à <strong>@Email</strong>
-                @if (Commune is not null)
-                {
-                    <span> pour <strong>@Commune.Name</strong></span>
-                }.
-            </span>
-        }
-    </div>
-    @if (OnDismiss.HasDelegate)
+<MudAlert Severity="Severity.Success"
+          ShowCloseIcon="@OnDismiss.HasDelegate"
+          CloseIconClicked="OnDismiss"
+          Dense="@(Size == "sm")"
+          role="status">
+    <strong>Inscription confirmée !</strong>
+    @if (!string.IsNullOrWhiteSpace(Email))
     {
-        <button class="btn-close btn-close-sm ms-auto align-self-start"
-                type="button"
-                aria-label="Fermer"
-                @onclick="OnDismiss" />
+        <span>
+            Vous recevrez les alertes à <strong>@Email</strong>
+            @if (Commune is not null)
+            {
+                <span> pour <strong>@Commune.Name</strong></span>
+            }.
+        </span>
     }
-</div>
+</MudAlert>
 
 @code {
-    /// <summary>Email address that was registered.</summary>
     [Parameter] public string? Email { get; set; }
-
-    /// <summary>Commune for which the subscription was created.</summary>
     [Parameter] public Commune? Commune { get; set; }
-
-    /// <summary>When provided, shows a close button that invokes this callback.</summary>
     [Parameter] public EventCallback OnDismiss { get; set; }
-
-    /// <summary>Visual size: "sm", "md" (default), or "lg".</summary>
     [Parameter] public string Size { get; set; } = "md";
-
-    private string SizeClass => Size switch
-    {
-        "sm" => "alert-confirm--sm",
-        "lg" => "alert-confirm--lg",
-        _ => "alert-confirm--md"
-    };
 }

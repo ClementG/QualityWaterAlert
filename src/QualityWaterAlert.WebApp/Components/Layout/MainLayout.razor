@@ -1,23 +1,65 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<MudThemeProvider Theme="@_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="false">
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        </MudHidden>
+        <MudLink Href="/" Color="Color.Inherit" Underline="Underline.None">
+            <MudText Typo="Typo.h6" Class="ms-1">💧 Quality Water Alert</MudText>
+        </MudLink>
+        <MudSpacer />
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudButton Color="Color.Inherit" Href="/" StartIcon="@Icons.Material.Filled.Home">Accueil</MudButton>
+            <MudButton Color="Color.Inherit" Href="/about" StartIcon="@Icons.Material.Filled.Info">À propos</MudButton>
+        </MudHidden>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-drawer-text)">💧 Quality Water Alert</MudText>
+        </MudDrawerHeader>
         <NavMenu />
-    </div>
+    </MudDrawer>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="about">About Quality Water Alert</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Une erreur inattendue est survenue.
+    <a href="." class="reload">Recharger</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _drawerOpen;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private static readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#1565C0",
+            PrimaryDarken = "#0D3B66",
+            PrimaryLighten = "#42A5F5",
+            Secondary = "#03A9F4",
+            Success = "#388E3C",
+            Warning = "#F57C00",
+            Error = "#C62828",
+            Background = "#F8FBFF",
+            AppbarBackground = "#1565C0",
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#1A237E",
+            DrawerText = "#E3F2FD",
+            DrawerIcon = "#E3F2FD",
+        }
+    };
+}

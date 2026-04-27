@@ -1,72 +1,37 @@
 @inject IDataProvider DataProvider
 
-<div class="commune-search position-relative">
-
-    <div class="input-group shadow-sm">
-        <span class="input-group-text bg-white border-end-0 text-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11"/>
-            </svg>
-        </span>
-        <input type="search"
-               class="form-control border-start-0 ps-0"
-               placeholder="@(_isInitializing ? "Chargement des communes…" : "Commune ou code postal (ex : Paris, 75…)")"
-               disabled="@_isInitializing"
-               autocomplete="off"
-               value="@_query"
-               @oninput="OnInput"
-               @onkeydown="OnKeyDown"
-               aria-label="Rechercher une commune"
-               aria-autocomplete="list"
-               aria-expanded="@_showDropdown" />
-    </div>
-
-    @if (_showDropdown)
-    {
-        <div class="commune-search-dropdown border rounded shadow bg-white position-absolute w-100"
-             style="top: calc(100% + 4px); z-index: 1000;">
-            @if (_results.Count > 0)
-            {
-                <ul class="list-unstyled mb-0" style="max-height: 280px; overflow-y: auto;" role="listbox">
-                    @foreach (var commune in _results)
-                    {
-                        <li role="option">
-                            <button class="commune-result-btn btn btn-link text-start w-100 px-3 py-2 text-decoration-none text-dark"
-                                    type="button"
-                                    @onclick="() => Select(commune)">
-                                <span class="fw-semibold">@commune.Name</span>
-                                <span class="text-muted ms-2 small">Dept. @commune.DepartmentCode &middot; @commune.INSEECode</span>
-                            </button>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p class="px-3 py-2 mb-0 text-muted small">
-                    Aucune commune trouv&eacute;e pour &laquo;&nbsp;@_query&nbsp;&raquo;.
-                </p>
-            }
-        </div>
-    }
-
-</div>
+<MudAutocomplete T="Commune"
+                 Placeholder="@(_isInitializing ? "Chargement des communes…" : "Commune ou code postal (ex : Paris, 75…)")"
+                 SearchFunc="SearchCommunes"
+                 ToStringFunc="@(c => c?.Name ?? string.Empty)"
+                 ValueChanged="HandleSelection"
+                 Disabled="_isInitializing"
+                 Clearable="true"
+                 ResetValueOnEmptyText="true"
+                 CoerceValue="false"
+                 MinCharacters="@MinQueryLength"
+                 MaxItems="@MaxResults"
+                 AdornmentIcon="@Icons.Material.Filled.Search"
+                 Adornment="Adornment.Start"
+                 Variant="Variant.Outlined"
+                 FullWidth="true">
+    <ItemTemplate Context="commune">
+        <MudText>
+            <strong>@commune.Name</strong>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Inline="true" Class="ms-2">
+                Dept. @commune.DepartmentCode &middot; @commune.INSEECode
+            </MudText>
+        </MudText>
+    </ItemTemplate>
+</MudAutocomplete>
 
 @code {
-    /// <summary>Raised when the user selects a commune from the results.</summary>
     [Parameter] public EventCallback<Commune> OnCommuneSelected { get; set; }
-
-    /// <summary>Minimum number of characters required before a search is triggered.</summary>
     [Parameter] public int MinQueryLength { get; set; } = 2;
-
-    /// <summary>Maximum number of results shown in the dropdown.</summary>
     [Parameter] public int MaxResults { get; set; } = 15;
 
-    private string _query = string.Empty;
-    private List<Commune> _results = new();
     private CommuneSearcher? _searcher;
     private bool _isInitializing = true;
-    private bool _showDropdown;
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,48 +40,24 @@
         _isInitializing = false;
     }
 
-    private void OnInput(ChangeEventArgs e)
+    private Task<IEnumerable<Commune>> SearchCommunes(string value, CancellationToken ct)
     {
-        _query = e.Value?.ToString() ?? string.Empty;
-        PerformSearch();
+        if (_searcher is null || value.Length < MinQueryLength)
+            return Task.FromResult(Enumerable.Empty<Commune>());
+
+        var results = IsPostalCode(value)
+            ? _searcher.SearchByPostalCode(value, MaxResults)
+            : _searcher.SearchByName(value, MaxResults);
+
+        return Task.FromResult(results.AsEnumerable());
     }
 
-    private void OnKeyDown(KeyboardEventArgs e)
+    private async Task HandleSelection(Commune? commune)
     {
-        if (e.Key == "Escape")
-            CloseDropdown();
+        if (commune is not null)
+            await OnCommuneSelected.InvokeAsync(commune);
     }
 
-    private void PerformSearch()
-    {
-        if (_searcher is null || _query.Length < MinQueryLength)
-        {
-            _results.Clear();
-            _showDropdown = false;
-            return;
-        }
-
-        _results = IsPostalCode(_query)
-            ? _searcher.SearchByPostalCode(_query, MaxResults)
-            : _searcher.SearchByName(_query, MaxResults);
-
-        _showDropdown = true;
-    }
-
-    private async Task Select(Commune commune)
-    {
-        _query = commune.Name;
-        CloseDropdown();
-        await OnCommuneSelected.InvokeAsync(commune);
-    }
-
-    private void CloseDropdown()
-    {
-        _results.Clear();
-        _showDropdown = false;
-    }
-
-    // A postal code starts with at least two digits (department prefix).
     private static bool IsPostalCode(string input) =>
         input.Length >= 2 && input.All(char.IsDigit);
 }

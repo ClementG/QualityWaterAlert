@@ -7,54 +7,54 @@
     <div class="home-hero-content">
         <div class="text-center mb-4">
             <span class="home-hero-icon" aria-hidden="true">💧</span>
-            <h1 class="home-hero-title">Quality Water Alert</h1>
-            <p class="home-hero-subtitle">
+            <MudText Typo="Typo.h4" Class="home-hero-title">Quality Water Alert</MudText>
+            <MudText Typo="Typo.body1" Class="home-hero-subtitle">
                 Vérifiez en quelques secondes la qualité de l'eau potable de votre commune
                 à partir des données officielles du gouvernement français.
-            </p>
+            </MudText>
         </div>
 
         <div class="home-search-wrapper">
             <CommuneSearch OnCommuneSelected="NavigateToResults" MaxResults="12" />
         </div>
 
-        <p class="text-center text-muted small mt-2">
+        <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="mt-2 d-block">
             Saisissez le nom d'une commune ou un code postal (ex&nbsp;: Paris, 75…)
-        </p>
+        </MudText>
     </div>
 </div>
 
-<div class="container py-5">
-    <div class="row g-4 text-center">
-        <div class="col-md-4">
-            <div class="home-feature">
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudGrid Spacing="4">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="home-feature pa-6 text-center" Elevation="0">
                 <span class="home-feature-icon" aria-hidden="true">🔍</span>
-                <h2 class="h6 fw-semibold mt-2">Données officielles</h2>
-                <p class="text-muted small mb-0">
+                <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1"><strong>Données officielles</strong></MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Résultats issus du contrôle sanitaire publié sur data.gouv.fr, mis à jour en 2025.
-                </p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="home-feature">
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="home-feature pa-6 text-center" Elevation="0">
                 <span class="home-feature-icon" aria-hidden="true">✅</span>
-                <h2 class="h6 fw-semibold mt-2">Conformité instantanée</h2>
-                <p class="text-muted small mb-0">
+                <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1"><strong>Conformité instantanée</strong></MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Visualisez d'un coup d'œil si votre eau respecte les normes réglementaires en vigueur.
-                </p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="home-feature">
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="home-feature pa-6 text-center" Elevation="0">
                 <span class="home-feature-icon" aria-hidden="true">🔔</span>
-                <h2 class="h6 fw-semibold mt-2">Alertes par email</h2>
-                <p class="text-muted small mb-0">
+                <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1"><strong>Alertes par email</strong></MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Abonnez-vous pour être notifié dès qu'un changement de qualité est détecté.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
 @code {
     private void NavigateToResults(Commune commune)

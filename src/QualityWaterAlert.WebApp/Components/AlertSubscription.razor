@@ -1,128 +1,28 @@
-@* Bell button — visible at all times *@
-<button class="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
-        type="button"
-        @onclick="OpenModal"
-        aria-haspopup="dialog"
-        aria-label="S'abonner aux alertes qualité eau">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-         viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6" />
-    </svg>
-    <span>Alertes</span>
-</button>
+@inject IDialogService DialogService
 
-@* Modal overlay — rendered only when open *@
-@if (_showModal)
-{
-    <div class="alert-sub-overlay" role="presentation" @onclick="CloseModal">
-        <div class="alert-sub-dialog"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="alert-sub-title"
-             @onclick:stopPropagation="true">
-
-            <div class="alert-sub-header">
-                <span id="alert-sub-title" class="fw-semibold fs-6">
-                    S'abonner aux alertes
-                </span>
-                <button class="btn-close btn-sm"
-                        type="button"
-                        aria-label="Fermer"
-                        @onclick="CloseModal" />
-            </div>
-
-            <div class="alert-sub-body">
-                @if (Commune is not null)
-                {
-                    <p class="text-muted small mb-3">
-                        Recevez un email dès qu'un changement de conformité est détecté pour
-                        <strong>@Commune.Name</strong>.
-                    </p>
-                }
-
-                <EditForm Model="_form" OnValidSubmit="SubmitAsync">
-                    <DataAnnotationsValidator />
-
-                    <div class="mb-3">
-                        <label for="alert-email" class="form-label small fw-medium">
-                            Adresse email
-                        </label>
-                        <InputText id="alert-email"
-                                   @bind-Value="_form.Email"
-                                   class="form-control form-control-sm"
-                                   placeholder="vous@exemple.fr"
-                                   autocomplete="email"
-                                   disabled="@_isSubmitting" />
-                        <ValidationMessage For="() => _form.Email" class="text-danger small mt-1 d-block" />
-                    </div>
-
-                    <div class="d-flex gap-2 justify-content-end">
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                @onclick="CloseModal"
-                                disabled="@_isSubmitting">
-                            Annuler
-                        </button>
-                        <button type="submit"
-                                class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2"
-                                disabled="@_isSubmitting">
-                            @if (_isSubmitting)
-                            {
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            }
-                            S'abonner
-                        </button>
-                    </div>
-                </EditForm>
-            </div>
-
-        </div>
-    </div>
-}
+<MudButton Variant="Variant.Outlined"
+           StartIcon="@Icons.Material.Filled.NotificationsNone"
+           OnClick="OpenDialogAsync"
+           aria-label="S'abonner aux alertes qualité eau">
+    Alertes
+</MudButton>
 
 @code {
-    /// <summary>Commune for which alerts are being set up. Used for the descriptive text in the modal.</summary>
     [Parameter] public Commune? Commune { get; set; }
-
-    /// <summary>Raised with the subscriber's email address after the form is submitted.</summary>
     [Parameter] public EventCallback<string> OnSubscribed { get; set; }
 
-    private bool _showModal;
-    private bool _isSubmitting;
-    private readonly SubscriptionForm _form = new();
-
-    private void OpenModal()
+    private async Task OpenDialogAsync()
     {
-        _form.Reset();
-        _showModal = true;
-    }
-
-    private void CloseModal()
-    {
-        if (!_isSubmitting)
-            _showModal = false;
-    }
-
-    private async Task SubmitAsync()
-    {
-        _isSubmitting = true;
-        try
+        var parameters = new DialogParameters<AlertSubscriptionDialog>
         {
-            await OnSubscribed.InvokeAsync(_form.Email);
-            _showModal = false;
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
-    }
-
-    private sealed class SubscriptionForm
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "L'adresse email est requise.")]
-        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Adresse email invalide.")]
-        public string Email { get; set; } = string.Empty;
-
-        public void Reset() => Email = string.Empty;
+            { x => x.Commune, Commune }
+        };
+        var dialog = await DialogService.ShowAsync<AlertSubscriptionDialog>(
+            "S'abonner aux alertes",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string email })
+            await OnSubscribed.InvokeAsync(email);
     }
 }

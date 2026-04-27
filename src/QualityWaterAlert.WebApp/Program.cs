@@ -1,3 +1,4 @@
+using MudBlazor.Services;
 using QualityWaterAlert.Infrastructure.Interfaces;
 using QualityWaterAlert.Infrastructure.Providers;
 using QualityWaterAlert.WebApp.Components;
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient<IDataProvider, DataGouvFrProvider>(client =>
 {

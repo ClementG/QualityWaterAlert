@@ -1,83 +1,92 @@
 @if (IsLoading)
 {
     <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Chargement…</span>
-        </div>
-        <p class="text-muted mt-3 small">Récupération des données qualité…</p>
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-3">Récupération des données qualité…</MudText>
     </div>
 }
 else if (Analysis is not null)
 {
     @* ---- Conformity banner ---- *@
-    <div class="alert @(Analysis.OverallConformity == 'C' ? "alert-success" : "alert-danger") d-flex align-items-center gap-3 mb-4"
-         role="status">
-        <span class="fs-3" aria-hidden="true">@(Analysis.OverallConformity == 'C' ? "✅" : "❌")</span>
-        <div>
-            <strong class="d-block fs-5">@Analysis.Commune.Name</strong>
-            <span>
+    <MudAlert Severity="@(Analysis.OverallConformity == 'C' ? Severity.Success : Severity.Error)" Class="mb-4" role="status">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.subtitle1"><strong>@Analysis.Commune.Name</strong></MudText>
+            <MudText Typo="Typo.body2">
                 @(Analysis.OverallConformity == 'C'
                     ? "Eau conforme aux normes en vigueur"
                     : "Eau non conforme — des anomalies ont été détectées")
-            </span>
+            </MudText>
             @if (Oldest is not null && Latest is not null)
             {
-                <small class="d-block opacity-75 mt-1">
+                <MudText Typo="Typo.caption">
                     Données du @Oldest.SamplingDate.ToString("dd/MM/yyyy") au @Latest.SamplingDate.ToString("dd/MM/yyyy")
-                </small>
+                </MudText>
             }
-        </div>
-    </div>
+        </MudStack>
+    </MudAlert>
 
-    @* ---- Summary stats cards ---- *@
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card text-center h-100 border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <div class="wqd-stat-value text-primary">@Analysis.TotalSamplings</div>
-                    <div class="text-muted small mt-1">Prélèvements</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center h-100 border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <div class="wqd-stat-value text-success">@Analysis.ConformSamplings</div>
-                    <div class="text-muted small mt-1">Conformes</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center h-100 border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <div class="wqd-stat-value @(Analysis.NonConformSamplings > 0 ? "text-danger" : "text-success")">
-                        @Analysis.NonConformSamplings
-                    </div>
-                    <div class="text-muted small mt-1">Non-conformes</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card text-center h-100 border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <div class="wqd-stat-value @PctColor">@Analysis.ConformityPercentage&nbsp;%</div>
-                    <div class="text-muted small mt-1">Taux de conformité</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @* ---- Stats cards + Donut chart ---- *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="8">
+            <MudGrid Spacing="3">
+                <MudItem xs="6">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="text-center pa-4">
+                            <div class="wqd-stat-value mud-primary-text">@Analysis.TotalSamplings</div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Prélèvements</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="text-center pa-4">
+                            <div class="wqd-stat-value mud-success-text">@Analysis.ConformSamplings</div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Conformes</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="text-center pa-4">
+                            <div class="wqd-stat-value @(Analysis.NonConformSamplings > 0 ? "mud-error-text" : "mud-success-text")">
+                                @Analysis.NonConformSamplings
+                            </div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Non-conformes</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="text-center pa-4">
+                            <div class="wqd-stat-value @PctColor">@Analysis.ConformityPercentage&nbsp;%</div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Taux de conformité</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
 
-    @* ---- Problematic parameters (only when non-conform results exist) ---- *@
+        <MudItem xs="12" md="4" Class="d-flex justify-center align-center">
+            <ConformityDonutChart ConformCount="@Analysis.ConformSamplings"
+                                  TotalCount="@Analysis.TotalSamplings" />
+        </MudItem>
+    </MudGrid>
+
+    @* ---- Problematic parameters ---- *@
     @if (Problematic.Count > 0)
     {
-        <div class="card border-danger mb-4">
-            <div class="card-header wqd-danger-header d-flex align-items-center gap-2">
-                <span aria-hidden="true">⚠️</span>
-                <strong>Paramètres non conformes</strong>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm mb-0 align-middle">
-                    <thead class="table-light">
+        <MudCard Elevation="1" Class="mb-4">
+            <MudCardHeader Class="wqd-danger-header">
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" />
+                        <strong>Paramètres non conformes</strong>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <div class="overflow-x-auto">
+                <table class="wqa-table wqa-table-sm">
+                    <thead>
                         <tr>
                             <th>Paramètre</th>
                             <th class="text-end pe-3">Dépassements</th>
@@ -89,30 +98,34 @@ else if (Analysis is not null)
                             <tr>
                                 <td>@name</td>
                                 <td class="text-end pe-3">
-                                    <span class="badge bg-danger rounded-pill">@count</span>
+                                    <span class="wqa-badge wqa-badge--danger wqa-badge--pill">@count</span>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </div>
+        </MudCard>
     }
 
-    @* ---- Recent sampling events ---- *@
+    @* ---- Recent samplings ---- *@
     @if (RecentSamplings.Count > 0)
     {
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <strong>Prélèvements récents</strong>
-                @if (Analysis.TotalSamplings > MaxSamplings)
-                {
-                    <span class="badge bg-secondary">@MaxSamplings / @Analysis.TotalSamplings</span>
-                }
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0 align-middle">
-                    <thead class="table-light">
+        <MudCard Elevation="1" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <strong>Prélèvements récents</strong>
+                        @if (Analysis.TotalSamplings > MaxSamplings)
+                        {
+                            <span class="wqa-badge wqa-badge--secondary">@MaxSamplings / @Analysis.TotalSamplings</span>
+                        }
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <div class="overflow-x-auto">
+                <table class="wqa-table wqa-table-sm">
+                    <thead>
                         <tr>
                             <th>Date</th>
                             <th>Réseau</th>
@@ -125,10 +138,12 @@ else if (Analysis is not null)
                     <tbody>
                         @foreach (var s in RecentSamplings)
                         {
-                            <tr class="@(s.IsNonConform ? "table-danger" : "")">
+                            <tr class="@(s.IsNonConform ? "wqa-row-danger" : "")">
                                 <td class="text-nowrap">@s.SamplingDate.ToString("dd/MM/yyyy")</td>
-                                <td class="text-muted small">
-                                    @(string.IsNullOrWhiteSpace(s.NetworkCode) ? "—" : s.NetworkCode)
+                                <td>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Inline="true">
+                                        @(string.IsNullOrWhiteSpace(s.NetworkCode) ? "—" : s.NetworkCode)
+                                    </MudText>
                                 </td>
                                 <td class="text-center">
                                     <ComplianceIndicator ConformityStatus="s.BacterioConformity" ShowLabel="false" Size="sm" />
@@ -139,11 +154,11 @@ else if (Analysis is not null)
                                 <td class="text-center">
                                     @if (s.GetNonConformMeasurementCount() > 0)
                                     {
-                                        <span class="badge bg-danger">@s.GetNonConformMeasurementCount() NC</span>
+                                        <span class="wqa-badge wqa-badge--danger">@s.GetNonConformMeasurementCount() NC</span>
                                     }
                                     else
                                     {
-                                        <span class="text-muted small">@s.Measurements.Count</span>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Inline="true">@s.Measurements.Count</MudText>
                                     }
                                 </td>
                                 <td class="text-center">
@@ -154,20 +169,24 @@ else if (Analysis is not null)
                     </tbody>
                 </table>
             </div>
-        </div>
+        </MudCard>
     }
 
-    @* ---- Measurements from the latest sampling ---- *@
+    @* ---- Latest measurements ---- *@
     @if (Latest is not null && Latest.Measurements.Count > 0)
     {
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <strong>Mesures — dernier prélèvement</strong>
-                <span class="text-muted small">@Latest.SamplingDate.ToString("dd/MM/yyyy")</span>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm mb-0 align-middle">
-                    <thead class="table-light">
+        <MudCard Elevation="1">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <strong>Mesures — dernier prélèvement</strong>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@Latest.SamplingDate.ToString("dd/MM/yyyy")</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <div class="overflow-x-auto">
+                <table class="wqa-table wqa-table-sm">
+                    <thead>
                         <tr>
                             <th>Paramètre</th>
                             <th>Valeur mesurée</th>
@@ -178,11 +197,13 @@ else if (Analysis is not null)
                     <tbody>
                         @foreach (var m in Latest.Measurements.OrderBy(m => m.IsConform).ThenBy(m => m.DisplayName))
                         {
-                            <tr class="@(m.IsNonConform ? "table-danger" : "")">
+                            <tr class="@(m.IsNonConform ? "wqa-row-danger" : "")">
                                 <td>@m.DisplayName</td>
                                 <td>@m.MeasurementDisplay</td>
-                                <td class="text-muted small">
-                                    @(string.IsNullOrWhiteSpace(m.QualityLimit) || m.QualityLimit == "X" ? "—" : m.QualityLimit)
+                                <td>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Inline="true">
+                                        @(string.IsNullOrWhiteSpace(m.QualityLimit) || m.QualityLimit == "X" ? "—" : m.QualityLimit)
+                                    </MudText>
                                 </td>
                                 <td class="text-center">@m.StatusBadge</td>
                             </tr>
@@ -190,18 +211,13 @@ else if (Analysis is not null)
                     </tbody>
                 </table>
             </div>
-        </div>
+        </MudCard>
     }
 }
 
 @code {
-    /// <summary>The water quality analysis to display. Nothing is rendered when null.</summary>
     [Parameter] public WaterQualityAnalysis? Analysis { get; set; }
-
-    /// <summary>Shows a loading spinner instead of data while true.</summary>
     [Parameter] public bool IsLoading { get; set; }
-
-    /// <summary>Maximum number of sampling events shown in the recent samplings table.</summary>
     [Parameter] public int MaxSamplings { get; set; } = 10;
 
     private SamplingEvent? Latest => Analysis?.GetLatestSampling();
@@ -217,8 +233,7 @@ else if (Analysis is not null)
             .ToList() ?? [];
 
     private string PctColor =>
-        (Analysis?.ConformityPercentage ?? 0) >= 95m ? "text-success"
-        : (Analysis?.ConformityPercentage ?? 0) >= 75m ? "text-warning"
-        : "text-danger";
-
+        (Analysis?.ConformityPercentage ?? 0) >= 95m ? "mud-success-text"
+        : (Analysis?.ConformityPercentage ?? 0) >= 75m ? "mud-warning-text"
+        : "mud-error-text";
 }

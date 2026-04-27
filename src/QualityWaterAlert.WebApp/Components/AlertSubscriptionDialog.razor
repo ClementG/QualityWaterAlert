@@ -1,0 +1,77 @@
+<MudDialog>
+    <DialogContent>
+        @if (Commune is not null)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Recevez un email dès qu'un changement de conformité est détecté pour
+                <strong>@Commune.Name</strong>.
+            </MudText>
+        }
+        <MudTextField @bind-Value="_email"
+                      Label="Adresse email"
+                      Placeholder="vous@exemple.fr"
+                      InputType="InputType.Email"
+                      Disabled="_isSubmitting"
+                      Immediate="true" />
+        @if (_validationError is not null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-1">@_validationError</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isSubmitting">Annuler</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="SubmitAsync"
+                   Disabled="_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            S'abonner
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
+    [Parameter] public Commune? Commune { get; set; }
+
+    private string _email = string.Empty;
+    private string? _validationError;
+    private bool _isSubmitting;
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        _validationError = null;
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _validationError = "L'adresse email est requise.";
+            return;
+        }
+        if (!IsValidEmail(_email))
+        {
+            _validationError = "Adresse email invalide.";
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            await Task.Yield();
+            MudDialog?.Close(DialogResult.Ok(_email.Trim()));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try { return new System.Net.Mail.MailAddress(email).Address == email.Trim(); }
+        catch { return false; }
+    }
+}
