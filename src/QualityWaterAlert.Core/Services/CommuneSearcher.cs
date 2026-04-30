@@ -94,17 +94,29 @@ public class CommuneSearcher : ICommuneSearcher
     }
 
     /// <summary>
-    /// Searches communes by postal code prefix.
-    /// INSEE codes start with the department code which roughly corresponds to postal codes.
+    /// Searches communes by numeric code: exact INSEE, INSEE prefix, then department fallback.
     /// </summary>
     public List<Commune> SearchByPostalCode(string postalCodePrefix, int maxResults = 50)
     {
         if (string.IsNullOrWhiteSpace(postalCodePrefix))
             return new List<Commune>();
 
-        // Postal codes are typically 5 digits. First 2 match department code.
-        var deptCode = postalCodePrefix.Substring(0, Math.Min(2, postalCodePrefix.Length));
+        // Exact INSEE match
+        var exact = FindByINSEECode(postalCodePrefix);
+        if (exact is not null)
+            return [exact];
 
+        // Prefix of INSEE code (e.g. "750" matches 75056)
+        var byPrefix = _communes
+            .Where(c => c.INSEECode.StartsWith(postalCodePrefix, StringComparison.Ordinal))
+            .OrderBy(c => c.Name)
+            .Take(maxResults)
+            .ToList();
+        if (byPrefix.Count > 0)
+            return byPrefix;
+
+        // Department code fallback (first 2 chars, e.g. "75000" → dept "75")
+        var deptCode = postalCodePrefix.Substring(0, Math.Min(2, postalCodePrefix.Length));
         return FindByDepartment(deptCode).Take(maxResults).ToList();
     }
 

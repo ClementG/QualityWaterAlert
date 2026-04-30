@@ -380,7 +380,7 @@ public sealed class DataGouvFrProvider : IDataProvider
                     "DIS_COM_UDI file not found in the dataset ZIP");
 
             using var stream = await FetchZipEntryAsync(entry);
-            using var reader = new StreamReader(stream, Encoding.Latin1);
+            using var reader = new StreamReader(stream, Encoding.UTF8);
 
             var dict = new Dictionary<string, Commune>(StringComparer.Ordinal);
             ParseCommunesFromReader(reader, dict);
@@ -421,7 +421,7 @@ public sealed class DataGouvFrProvider : IDataProvider
             if (plvEntry is not null)
             {
                 using var stream = await FetchZipEntryAsync(plvEntry);
-                using var reader = new StreamReader(stream, Encoding.Latin1);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
                 ParsePlvFromReader(reader, samplingsByInsee, samplingsByRef);
             }
 
@@ -430,7 +430,7 @@ public sealed class DataGouvFrProvider : IDataProvider
             if (resultEntry is not null)
             {
                 using var stream = await FetchZipEntryAsync(resultEntry);
-                using var reader = new StreamReader(stream, Encoding.Latin1);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
                 ParseResultFromReader(reader, samplingsByRef);
             }
 

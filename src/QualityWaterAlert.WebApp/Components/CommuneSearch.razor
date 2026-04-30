@@ -1,7 +1,9 @@
 @inject IDataProvider DataProvider
+@inject IHttpClientFactory HttpClientFactory
+@using System.Text.Json.Serialization
 
 <MudAutocomplete T="Commune"
-                 Placeholder="@(_isInitializing ? "Chargement des communes…" : "Commune ou code postal (ex : Paris, 75…)")"
+                 Placeholder="@(_isInitializing ? "Chargement des communes…" : "Commune (ex : Paris) ou code postal (ex : 92500)")"
                  SearchFunc="SearchCommunes"
                  ToStringFunc="@(c => c?.Name ?? string.Empty)"
                  ValueChanged="HandleSelection"
@@ -19,7 +21,7 @@
         <MudText>
             <strong>@commune.Name</strong>
             <MudText Typo="Typo.caption" Color="Color.Secondary" Inline="true" Class="ms-2">
-                Dept. @commune.DepartmentCode &middot; @commune.INSEECode
+                Dept. @commune.DepartmentCode &middot; INSEE @commune.INSEECode
             </MudText>
         </MudText>
     </ItemTemplate>
@@ -40,16 +42,43 @@
         _isInitializing = false;
     }
 
-    private Task<IEnumerable<Commune>> SearchCommunes(string value, CancellationToken ct)
+    private async Task<IEnumerable<Commune>> SearchCommunes(string value, CancellationToken ct)
     {
         if (_searcher is null || value.Length < MinQueryLength)
-            return Task.FromResult(Enumerable.Empty<Commune>());
+            return Enumerable.Empty<Commune>();
 
-        var results = IsPostalCode(value)
-            ? _searcher.SearchByPostalCode(value, MaxResults)
-            : _searcher.SearchByName(value, MaxResults);
+        if (IsPostalCode(value))
+        {
+            if (value.Length == 5)
+            {
+                var fromApi = await ResolvePostalCodeAsync(value, ct);
+                if (fromApi.Any()) return fromApi;
+            }
+            return _searcher.SearchByPostalCode(value, MaxResults);
+        }
 
-        return Task.FromResult(results.AsEnumerable());
+        return _searcher.SearchByName(value, MaxResults);
+    }
+
+    private async Task<IEnumerable<Commune>> ResolvePostalCodeAsync(string postalCode, CancellationToken ct)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            var geoCommunes = await client.GetFromJsonAsync<GeoCommune[]>(
+                $"https://geo.api.gouv.fr/communes?codePostal={postalCode}&fields=code,nom",
+                ct);
+            if (geoCommunes is null) return [];
+
+            return geoCommunes
+                .Select(g => _searcher!.FindByINSEECode(g.Code))
+                .OfType<Commune>()
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     private async Task HandleSelection(Commune? commune)
@@ -60,4 +89,8 @@
 
     private static bool IsPostalCode(string input) =>
         input.Length >= 2 && input.All(char.IsDigit);
+
+    private record GeoCommune(
+        [property: JsonPropertyName("code")] string Code,
+        [property: JsonPropertyName("nom")] string Nom);
 }

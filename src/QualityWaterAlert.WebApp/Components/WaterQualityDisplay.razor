@@ -195,7 +195,7 @@ else if (Analysis is not null)
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var m in Latest.Measurements.OrderBy(m => m.IsConform).ThenBy(m => m.DisplayName))
+                        @foreach (var m in LatestMeasurements)
                         {
                             <tr class="@(m.IsNonConform ? "wqa-row-danger" : "")">
                                 <td>@m.DisplayName</td>
@@ -236,4 +236,12 @@ else if (Analysis is not null)
         (Analysis?.ConformityPercentage ?? 0) >= 95m ? "mud-success-text"
         : (Analysis?.ConformityPercentage ?? 0) >= 75m ? "mud-warning-text"
         : "mud-error-text";
+
+    private List<WaterQualityParameter> LatestMeasurements =>
+        Latest?.Measurements
+            .OrderBy(m => string.IsNullOrWhiteSpace(m.MeasuredValue) ||
+                          m.MeasuredValue.Equals("SANS OBJET", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+            .ThenBy(m => m.IsConform)
+            .ThenBy(m => m.DisplayName)
+            .ToList() ?? [];
 }
