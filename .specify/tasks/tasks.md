@@ -328,23 +328,35 @@
 
 ### Epic 3.1: Docker Configuration
 
-- [ ] **3.1.1** Create Dockerfile for Blazor WebApp
+- [x] **3.1.1** Create Dockerfile for Blazor WebApp
   - Description: Multi-stage Dockerfile for building and running the Blazor app
   - Location: `src/QualityWaterAlert.WebApp/Dockerfile`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Build stage: `mcr.microsoft.com/dotnet/sdk:10.0` — restores only csproj files first (layer cache), then copies src/ and publishes Release
+    - Runtime stage: `mcr.microsoft.com/dotnet/aspnet:10.0` — minimal ASP.NET runtime, non-root user (appuser:1001), exposes port 8080
+    - Build context: repository root (docker-compose sets context, Dockerfile path points here)
+    - `ASPNETCORE_HTTP_PORTS=8080` set by base image (default since .NET 8)
 
-- [ ] **3.1.2** Create docker-compose.yml
+- [x] **3.1.2** Create docker-compose.yml
   - Description: Define services and volumes for the application
   - Location: `docker-compose.yml`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Critical
+  - Implementation:
+    - Service `webapp`: build context `.` (repo root), dockerfile `src/QualityWaterAlert.WebApp/Dockerfile`
+    - Port `8080:8080`, restart `unless-stopped`
+    - `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` pour reverse proxy NAS (Synology/QNAP/nginx)
+    - `env_file: .env` optionnel (`required: false`) pour les variables SMTP futures
+    - Healthcheck `curl -f http://localhost:8080/` (30s interval, 30s start_period)
 
-- [ ] **3.1.3** Create .dockerignore
+- [x] **3.1.3** Create .dockerignore
   - Description: Exclude unnecessary files from Docker build context
   - Location: `.dockerignore`
-  - Status: Not Started
+  - Status: Completed (was already present)
   - Priority: Medium
+  - Implementation: Excludes .git, .vs, bin, obj, .env*, tests, docs, .specify
 
 ### Epic 3.2: NAS Deployment Guide
 
