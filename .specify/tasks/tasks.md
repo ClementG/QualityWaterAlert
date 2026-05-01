@@ -360,17 +360,29 @@
 
 ### Epic 3.2: NAS Deployment Guide
 
-- [ ] **3.2.1** Write NAS deployment documentation
+- [x] **3.2.1** Write NAS deployment documentation
   - Description: Step-by-step guide for deploying to NAS using Docker
   - Location: `docs/DEPLOYMENT.md`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Cible : NAS TerraMaster (TOS 5.1+)
+    - Partie 1 : IP fixe locale, activation SSH, installation Docker depuis App Center TOS
+    - Partie 2 : copie des fichiers (SCP / Git / UI TOS), config .env, `docker compose up -d --build`, test local
+    - Partie 3 accès externe :
+      - Option A (recommandée) : Cloudflare Tunnel — aucun port ouvert, HTTPS automatique, conteneur `cloudflared` dans compose
+      - Option B : Port forwarding + DuckDNS + nginx Proxy Manager + Let's Encrypt
+    - Partie 4 : procédure de mise à jour et commandes utiles
 
-- [ ] **3.2.2** Create environment configuration template
+- [x] **3.2.2** Create environment configuration template
   - Description: Create .env.example with all necessary environment variables
   - Location: `.env.example`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Medium
+  - Implementation:
+    - ASPNETCORE_ENVIRONMENT
+    - SMTP_HOST, SMTP_PORT, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_USERNAME, SMTP_PASSWORD
+    - CLOUDFLARE_TUNNEL_TOKEN (pour Option A accès externe)
 
 ## Phase 4: GitFlow & CI/CD Setup
 
