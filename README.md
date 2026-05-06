@@ -1,147 +1,145 @@
 # QualityWaterAlert
 
-A modern web and mobile application to monitor drinking water quality in France using official government data.
+Monitor drinking water quality in France — a Blazor Server web application that fetches official government data, checks regulatory compliance, and sends email alerts when quality degrades.
 
-## Overview
-
-QualityWaterAlert provides French citizens with a clear, accessible, and proactive way to monitor the quality of their drinking water. The application presents official government data in a user-friendly format, compares it against regulatory standards, and alerts users to potential quality issues in their commune.
+[![CI](https://github.com/ClementG/QualityWaterAlert/actions/workflows/ci.yml/badge.svg)](https://github.com/ClementG/QualityWaterAlert/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/ClementG/QualityWaterAlert/actions/workflows/docker.yml/badge.svg)](https://github.com/ClementG/QualityWaterAlert/actions/workflows/docker.yml)
 
 ## Features
 
-- 🔍 **Search by Commune**: Find water quality data by commune name or postal code
-- 📊 **Data Visualization**: View water quality analysis results in clean tables and charts
-- ✅ **Compliance Checking**: See a clear comparison between measured values and regulatory limits
-- 🔔 **Email Alerts**: Subscribe to notifications for water quality changes in your commune
-- 📱 **Cross-Platform**: Access via web (Blazor) or mobile app (.NET MAUI)
+- **Commune search** — by name or postal code; covers all ~35 000 French communes
+- **Compliance dashboard** — measured values compared to regulatory limits, conformity donut chart, stat cards, sampling history
+- **Efficient data fetching** — HTTP Range requests on the remote government ZIP; downloads only the relevant department files (~2–10 MB vs 274 MB full archive), cached 24 h
+- **Email alerts** — subscribe per commune; notified when a non-conformity is detected
 
 ## Technology Stack
 
-- **Web Framework**: Blazor (ASP.NET Core)
-- **Mobile Framework**: .NET MAUI
-- **Language**: C#
-- **Testing**: NUnit
-- **Containerization**: Docker
-- **Data Source**: data.gouv.fr API
+| Layer | Technology |
+|-------|-----------|
+| Web UI | Blazor Server (.NET 10) + MudBlazor 8 |
+| Charts | Chart.js 4 (CDN) |
+| Business logic | C# 13, Clean Architecture |
+| Tests | NUnit 4 — 130 tests, 100 % passing |
+| Container | Docker (multi-stage) + docker-compose |
+| Data source | data.gouv.fr open data API |
 
-## Project Structure
+## Architecture
+
+Clean Architecture with three active layers; dependencies flow inward only.
 
 ```
-/QualityWaterAlert
-├── /src
-│   ├── QualityWaterAlert.WebApp/              # Blazor web application
-│   ├── QualityWaterAlert.App/                 # .NET MAUI mobile app
-│   ├── QualityWaterAlert.Core/                # Business logic and models
-│   └── QualityWaterAlert.Infrastructure/      # Data access and API integration
-├── /tests
-│   ├── QualityWaterAlert.Core.Tests/          # Core logic tests
-│   └── QualityWaterAlert.Infrastructure.Tests/# Infrastructure tests
-├── /.github/
-│   └── /prompts/                              # Project documentation
-├── /.specify/
-│   ├── /memory/                               # Constitution and guidelines
-│   ├── /spec/                                 # Specification documents
-│   ├── /plan/                                 # Development plan
-│   └── /tasks/                                # Task list
-├── docker-compose.yml
-├── .gitignore
-└── README.md
+Core  ←  Infrastructure  ←  WebApp
 ```
+
+- **`Core`** — models (`Commune`, `WaterNetwork`, `SamplingEvent`, `WaterQualityParameter`, `WaterQualityAnalysis`) and services (`ComplianceChecker`, `CommuneSearcher`). Zero external dependencies.
+- **`Infrastructure`** — `DataGouvFrProvider` (HTTP Range requests on the government ZIP), `EmailService` (SMTP). Implements interfaces defined in Core.
+- **`WebApp`** — Blazor Server pages and components. Consumes Core and Infrastructure via dependency injection.
+- **`App`** — .NET MAUI shell, scaffolded for post-MVP mobile support.
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET 10.0 or higher
-- Docker (for containerized deployment)
-- Git
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- Docker (optional, for containerized deployment)
 
-### Development Setup
+### Run locally
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/ClementG/QualityWaterAlert.git
 cd QualityWaterAlert
+dotnet restore
+dotnet run --project src/QualityWaterAlert.WebApp
 ```
 
-2. Switch to the develop branch:
-```bash
-git checkout develop
-```
+Open `http://localhost:5295` in your browser (HTTPS: `https://localhost:7099`).
 
-3. Build the solution:
-```bash
-dotnet build
-```
-
-4. Run the Blazor web app:
-```bash
-cd src/QualityWaterAlert.WebApp
-dotnet run
-```
-
-5. Run tests:
-```bash
-dotnet test
-```
-
-### Docker Deployment
-
-Build and run the Docker container:
+### Run with Docker
 
 ```bash
+cp .env.example .env   # optional — configure SMTP and Cloudflare Tunnel
 docker-compose up --build
 ```
 
-The application will be available at `http://localhost:8080`
+App available at `http://localhost:8080`.
 
-## Development Workflow
+### Run tests
 
-This project follows the **GitFlow** branching model:
+```bash
+dotnet test                                               # all 130 tests
+dotnet test tests/QualityWaterAlert.Core.Tests/           # Core (108 tests)
+dotnet test tests/QualityWaterAlert.Infrastructure.Tests/ # Infrastructure (22 tests)
 
-- **main**: Production-ready code
-- **develop**: Primary development branch
-- **feature/**: Feature branches for new functionality
-- **release/**: Release preparation branches
-- **hotfix/**: Critical production fixes
+# Filter by name
+dotnet test --filter "FullyQualifiedName~ComplianceCheckerTests"
+```
 
-All changes must:
-1. Be implemented with test-first development (TDD)
-2. Pass all unit tests
-3. Be reviewed in a Pull Request
-4. Adhere to the project constitution
+## Configuration
 
-## Project Constitution
+Copy `.env.example` to `.env` and fill in the values you need.
 
-See [Constitution](./CONSTITUTION.md) for core principles, development standards, and governance rules.
+| Variable | Description |
+|----------|-------------|
+| `ASPNETCORE_ENVIRONMENT` | `Production` or `Development` |
+| `SMTP_HOST` | SMTP server (e.g. `smtp.gmail.com`) |
+| `SMTP_PORT` | 587 (STARTTLS, recommended), 465 (SSL), or 25 |
+| `SMTP_FROM_EMAIL` | Sender address |
+| `SMTP_FROM_NAME` | Display name in the "From" field |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | SMTP credentials |
+| `CLOUDFLARE_TUNNEL_TOKEN` | For Cloudflare Tunnel external access (Option A) |
 
-## Documentation
+SMTP variables are optional — the app runs without email alerts if they are not set.
 
-- [Specification](./SPECIFICATION.md) - Feature specifications and requirements
-- [Development Plan](./DEVELOPMENT_PLAN.md) - Detailed development roadmap
-- [Architecture](./ARCHITECTURE.md) - System architecture and design patterns
-- [Deployment Guide](./DEPLOYMENT.md) - Instructions for deploying to NAS
+## Deployment
 
-## Contributing
+The application is designed to run on a NAS (TerraMaster, Synology, QNAP) behind a reverse proxy.  
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for the full step-by-step guide covering:
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+- Docker Compose setup on TOS 5.1+
+- **Option A (recommended)**: Cloudflare Tunnel — HTTPS with no open ports
+- **Option B**: Port forwarding + DuckDNS + nginx Proxy Manager + Let's Encrypt
+- Update procedure and useful commands
 
-## License
+## Project Structure
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+```
+QualityWaterAlert/
+├── src/
+│   ├── QualityWaterAlert.Core/            # Models and business services
+│   ├── QualityWaterAlert.Infrastructure/  # Data provider (data.gouv.fr) + SMTP
+│   ├── QualityWaterAlert.WebApp/          # Blazor Server application
+│   └── QualityWaterAlert.App/             # .NET MAUI shell (post-MVP)
+├── tests/
+│   ├── QualityWaterAlert.Core.Tests/
+│   └── QualityWaterAlert.Infrastructure.Tests/
+├── docs/
+│   └── DEPLOYMENT.md
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                         # Build + test on every push/PR
+│       └── docker.yml                     # Docker image validation on master
+├── docker-compose.yml
+├── .env.example
+├── CONTRIBUTING.md
+└── README.md
+```
 
 ## Data Source
 
-Water quality data is sourced from the French government's open data platform:
-- Dataset: [Résultats du contrôle sanitaire de l'eau distribuée commune par commune](https://www.data.gouv.fr/datasets/resultats-du-controle-sanitaire-de-leau-distribuee-commune-par-commune/)
+Water quality data is published by the French Ministry of Health on the government open data platform:
 
-## Support
+> [Résultats du contrôle sanitaire de l'eau distribuée commune par commune](https://www.data.gouv.fr/datasets/resultats-du-controle-sanitaire-de-leau-distribuee-commune-par-commune/)
 
-For issues or feature requests, please open an issue on [GitHub](https://github.com/ClementG/QualityWaterAlert/issues).
+Files used at runtime per department: `DIS_COM_UDI_YYYY.txt`, `DIS_PLV_YYYY_{dept}.txt`, `DIS_RESULT_YYYY_{dept}.txt`. Data is fetched on demand and cached in memory for 24 hours.
 
-## Authors
+## Contributing
 
-- Clement G ([GitHub](https://github.com/ClementG))
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the GitFlow branching model, commit message conventions, and PR process.
 
----
+## License
 
-**Last Updated**: November 19, 2025
+MIT License — see [LICENSE](LICENSE) for details.
+
+## Author
+
+Clement G — [github.com/ClementG](https://github.com/ClementG)

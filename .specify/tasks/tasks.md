@@ -386,32 +386,51 @@
 
 ## Phase 4: GitFlow & CI/CD Setup
 
-### Epic 4.1: Repository Setup
+### Epic 4.1: Repository Setup ✅ COMPLETE
 
-- [ ] **4.1.1** Initialize Git branches
+- [x] **4.1.1** Initialize Git branches
   - Description: Create main, develop, and initial feature branches
-  - Status: Not Started
+  - Status: Completed — `master` (production) + `develop` (intégration) déjà présents ; convention `feature/*` / `hotfix/*` / `release/*` documentée dans CONTRIBUTING.md
   - Priority: Medium
 
-- [ ] **4.1.2** Create GitHub Actions workflows
+- [x] **4.1.2** Create GitHub Actions workflows
   - Description: Set up CI/CD pipeline for automated testing and deployment
   - Location: `.github/workflows/`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - **ci.yml** — déclenché sur push/PR vers `develop` et `master` : restore → build Release → test Core (trx) → test Infrastructure (trx) → upload artifacts. `concurrency` annule les runs redondants.
+    - **docker.yml** — déclenché sur push/PR vers `master` : build Docker multi-stage (sans push) avec cache GHA. Valide que l'image reste buildable à chaque merge en prod.
+  - Build Status: ✅ Fichiers créés (0 erreurs de syntaxe YAML)
 
-- [ ] **4.1.3** Create CONTRIBUTING.md
+- [x] **4.1.3** Create CONTRIBUTING.md
   - Description: Guidelines for contributing to the project
   - Location: `CONTRIBUTING.md`
-  - Status: Not Started
+  - Status: Completed
   - Priority: Medium
+  - Implementation:
+    - Prérequis + mise en place locale
+    - Tableau des branches GitFlow (master / develop / feature/* / hotfix/* / release/*)
+    - Convention de commits (`type(scope): message`)
+    - Commandes de tests (tous / par projet / par nom)
+    - Règles PR (CI verte, rebase à jour, review obligatoire)
 
 ### Epic 4.2: Documentation
 
-- [ ] **4.2.1** Create comprehensive README.md
+- [x] **4.2.1** Create comprehensive README.md
   - Description: Project overview, setup instructions, and usage guide
   - Location: `README.md`
-  - Status: Not Started
+  - Status: Completed
   - Priority: High
+  - Implementation:
+    - Badges CI + Docker Build (GitHub Actions)
+    - Features, stack table, architecture diagram (3 couches)
+    - Setup local (ports 5295/7099) + Docker (8080)
+    - Commandes de tests avec filtres NUnit
+    - Table de configuration des variables d'environnement
+    - Section déploiement NAS → lien vers docs/DEPLOYMENT.md
+    - Arborescence du projet à jour (workflows inclus)
+    - Data source avec lien officiel data.gouv.fr
 
 - [ ] **4.2.2** Create API documentation
   - Description: Document the data.gouv.fr API integration
@@ -437,9 +456,9 @@
 ## Summary
 
 **Total Tasks**: 41 (removed 24 MAUI-related tasks for future phase)
-**Completed**: 17
+**Completed**: 21
 **In Progress**: 0
-**Not Started**: 24
+**Not Started**: 20
 
 **Critical Priority Tasks**: 10
 **High Priority Tasks**: 18
